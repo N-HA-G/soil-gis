@@ -2,134 +2,396 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>土壌調査（ECODRR）Web GIS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Leaflet 読み込み（これが最重要） -->
-
-<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
+  <!-- Leaflet -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
     html, body, #map { height: 100%; margin: 0; }
-    .control-box {
-      background: white;
-      padding: 10px;
-      border-radius: 6px;
-      margin-bottom: 8px;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.3);
-      font-size: 14px;
-      line-height: 1.4;
+    /* 左上パネル（UI Aレイアウト） */
+    .panel {
+      position: absolute; top: 10px; left: 10px; z-index: 1000;
+      background: #fff; padding: 12px; border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.25); width: 320px;
+      font-size: 14px; line-height: 1.5;
+      max-height: calc(100vh - 20px); overflow: auto;
     }
-    .control-box input { width: 160px; }
+    .panel h3 { margin: 0 0 8px; font-size: 16px; }
+    .group { border-top: 1px solid #eee; padding-top: 10px; margin-top: 10px; }
+    .row { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+    .row label { width: 110px; }
+    .row input[type="range"] { flex: 1; }
+    .row input[type="color"] { width: 44px; height: 28px; padding: 0; border: none; background: transparent; }
+    .hint { color: #666; font-size: 12px; }
+    .small { font-size: 12px; }
+    .btn { padding: 4px 8px; border: 1px solid #ccc; border-radius: 4px; background: #fafafa; cursor: pointer; }
+    .btn:hover { background: #f0f0f0; }
   </style>
 </head>
 
 <body>
 <div id="map"></div>
 
+<!-- 🔧 UI パネル（左上） -->
+<div class="panel">
+  <h3>レイヤ操作（秩父市・大田地区）</h3>
+
+  <!-- ベースマップ -->
+  <div class="group">
+    <b>ベース（背景地図）</b>
+    <div class="row">
+      <label for="baseOpacity">背景透明度</label>
+      <input id="baseOpacity" type="range" min="0" max="1" step="0.05" value="1">
+    </div>
+  </div>
+
+  <!-- タイルレイヤ 個別コントロール -->
+  <div class="group">
+    <b>タイルレイヤ</b> <span class="hint">（チェックで表示ON/OFF）</span>
+
+    <!-- TWI -->
+    <div class="row"><input type="checkbox" id="twiToggle"><label for="twiToggle">TWI（湿潤度）</label></div>
+    <div class="row">
+      <label for="twiOpacity" class="small">透明度</label>
+      <input id="twiOpacity" type="range" min="0" max="1" step="0.05" value="0.8">
+    </div>
+    <div class="row">
+      <label for="twiHue" class="small">色相（Hue）</label>
+      <input id="twiHue" type="range" min="0" max="360" step="1" value="0">
+    </div>
+
+    <!-- HAND -->
+    <div class="row"><input type="checkbox" id="handToggle"><label for="handToggle">HAND（鉛直距離）</label></div>
+    <div class="row">
+      <label for="handOpacity" class="small">透明度</label>
+      <input id="handOpacity" type="range" min="0" max="1" step="0.05" value="0.8">
+    </div>
+    <div class="row">
+      <label for="handHue" class="small">色相（Hue）</label>
+      <input id="handHue" type="range" min="0" max="360" step="1" value="0">
+    </div>
+
+    <!-- 自然的景観 -->
+    <div class="row"><input type="checkbox" id="shizenToggle"><label for="shizenToggle">自然的景観多様度</label></div>
+    <div class="row">
+      <label for="shizenOpacity" class="small">透明度</label>
+      <input id="shizenOpacity" type="range" min="0" max="1" step="0.05" value="0.8">
+    </div>
+    <div class="row">
+      <label for="shizenHue" class="small">色相（Hue）</label>
+      <input id="shizenHue" type="range" min="0" max="360" step="1" value="0">
+    </div>
+
+    <!-- 水田 -->
+    <div class="row"><input type="checkbox" id="suidenToggle"><label for="suidenToggle">水田占有率</label></div>
+    <div class="row">
+      <label for="suidenOpacity" class="small">透明度</label>
+      <input id="suidenOpacity" type="range" min="0" max="1" step="0.05" value="0.8">
+    </div>
+    <div class="row">
+      <label for="suidenHue" class="small">色相（Hue）</label>
+      <input id="suidenHue" type="range" min="0" max="360" step="1" value="0">
+    </div>
+  </div>
+
+  <!-- 区境（大田地区） -->
+  <div class="group">
+    <b>区境（秩父市・大田地区）</b>
+    <div class="row"><input type="checkbox" id="boundaryToggle" checked><label for="boundaryToggle">chichibuoota.geojson を表示</label></div>
+    <div class="row">
+      <label for="boundaryColor" class="small">線色</label>
+      <input id="boundaryColor" type="color" value="#1E88E5">
+      <button id="fitBoundary" class="btn small">範囲へ</button>
+    </div>
+    <div class="row">
+      <label for="boundaryWeight" class="small">線の太さ</label>
+      <input id="boundaryWeight" type="range" min="1" max="6" step="1" value="2">
+    </div>
+  </div>
+
+  <!-- ポイント（土壌採取地点） -->
+  <div class="group">
+    <b>土壌ポイント（soil_points）</b>
+    <div class="row"><input type="checkbox" id="pointsToggle" checked><label for="pointsToggle">表示</label></div>
+    <div class="row">
+      <label class="small">配色</label>
+      <label class="small"><input type="radio" name="ptMode" value="ec" checked> ECスケール</label>
+      <label class="small"><input type="radio" name="ptMode" value="mono"> 単色</label>
+      <input id="pointColor" type="color" value="#ff6600" title="単色モードの色">
+    </div>
+    <div class="row">
+      <label for="pointSize" class="small">サイズ</label>
+      <input id="pointSize" type="range" min="4" max="12" step="1" value="7">
+    </div>
+  </div>
+
+  <div class="group small hint">
+    ※ Hue は PNG/JPEGタイルにも有効（画像色を回します）。  
+    ※ 反映されない時は対象レイヤを一度ONにしてから操作してください。
+  </div>
+</div>
+
 <script>
-// --------------------------------------
-// 地図初期化
-// --------------------------------------
-const map = L.map("map", {
-  center: [36.055, 139.07],
-  zoom: 13
-});
+  // ----------------------------
+  // 地図初期化 & ベース
+  // ----------------------------
+  const map = L.map('map', { center: [36.055, 139.07], zoom: 13 });
 
-// ベースマップ
-const osm = L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  { maxZoom: 19 }
-).addTo(map);
+  const osm = L.tileLayer(
+    'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    { maxZoom: 19, opacity: 1 }
+  ).addTo(map);
 
-// --------------------------------------
-// あなたのタイルレイヤ
-// --------------------------------------
-const twiLayer = L.tileLayer("./data/01_TWI_chichibu/{z}/{x}/{y}.png", {
-  opacity: 0.8, minZoom: 12, maxZoom: 18
-});
-const handLayer = L.tileLayer("./data/02_HAND_chichibu/{z}/{x}/{y}.png", {
-  opacity: 0.8
-});
-const shizenLayer = L.tileLayer("./data/04_SHIZEN_chichibu/{z}/{x}/{y}.png", {
-  opacity: 0.8
-});
-const suidenLayer = L.tileLayer("./data/05_suiden_chichibu/{z}/{x}/{y}.png", {
-  opacity: 0.8
-});
+  // ベース透明度
+  document.getElementById('baseOpacity').addEventListener('input', (e) => {
+    osm.setOpacity(Number(e.target.value));
+  });
 
-// 初期表示
-twiLayer.addTo(map);
+  // ----------------------------
+  // タイルレイヤ
+  // ----------------------------
+  const twiLayer    = L.tileLayer('./data/01_TWI_chichibu/{z}/{x}/{y}.png', { opacity: 0.8, minZoom: 12, maxZoom: 18 });
+  const handLayer   = L.tileLayer('./data/02_HAND_chichibu/{z}/{x}/{y}.png', { opacity: 0.8 });
+  const shizenLayer = L.tileLayer('./data/04_SHIZEN_chichibu/{z}/{x}/{y}.png', { opacity: 0.8 });
+  const suidenLayer = L.tileLayer('./data/05_suiden_chichibu/{z}/{x}/{y}.png', { opacity: 0.8 });
 
-// --------------------------------------
-L.control.layers(
-  { "OpenStreetMap": osm },
-  {
-    "TWI（湿潤度）": twiLayer,
-    "HAND（鉛直距離）": handLayer,
-    "自然的景観": shizenLayer,
-    "水田占有率": suidenLayer
-  },
-  { collapsed: false }
-).addTo(map);
+  // 初期表示は全OFF（UIでONにする）
+  // twiLayer.addTo(map);
 
-// --------------------------------------
-// 透明度 UI
-// --------------------------------------
-const opacityCtrl = L.control({ position: "topright" });
-opacityCtrl.onAdd = () => {
-  const div = L.DomUtil.create("div", "control-box");
-  div.innerHTML = `
-    <b>透明度</b><br>
-    <input type="range" id="opacityRange" min="0" max="1" value="0.8" step="0.05">
-  `;
-  return div;
-};
-opacityCtrl.addTo(map);
+  // レイヤ定義をまとめて管理（Hue/Opacityイベントを簡単に）
+  const tileDefs = {
+    twi:    { toggle: 'twiToggle',    opacity: 'twiOpacity',    hue: 'twiHue',    layer: twiLayer },
+    hand:   { toggle: 'handToggle',   opacity: 'handOpacity',   hue: 'handHue',   layer: handLayer },
+    shizen: { toggle: 'shizenToggle', opacity: 'shizenOpacity', hue: 'shizenHue', layer: shizenLayer },
+    suiden: { toggle: 'suidenToggle', opacity: 'suidenOpacity', hue: 'suidenHue', layer: suidenLayer }
+  };
 
-document.addEventListener("input", (e) => {
-  if (e.target.id === "opacityRange") {
-    const v = Number(e.target.value);
-    [twiLayer, handLayer, shizenLayer, suidenLayer].forEach(l => l.setOpacity(v));
+  // タイルに CSS フィルタ（Hue）を適用
+  function applyHueToTileLayer(layer, deg) {
+    if (!layer._container) return;
+    const imgs = layer._container.querySelectorAll('img.leaflet-tile');
+    imgs.forEach(img => { img.style.filter = `hue-rotate(${deg}deg)`; });
   }
-});
-
-// --------------------------------------
-// 色相（Hue） UI
-// --------------------------------------
-const hueCtrl = L.control({ position: "topright" });
-hueCtrl.onAdd = () => {
-  const div = L.DomUtil.create("div", "control-box");
-  div.innerHTML = `
-    <b>色相（Hue）</b><br>
-    <input type="range" id="hueRange" min="0" max="360" value="0">
-  `;
-  return div;
-};
-hueCtrl.addTo(map);
-
-function applyHue(layer, hue) {
-  if (!layer._container) return;
-  layer._container
-    .querySelectorAll("img.leaflet-tile")
-    .forEach(img => img.style.filter = `hue-rotate(${hue}deg)`);
-}
-
-document.addEventListener("input", (e) => {
-  if (e.target.id === "hueRange") {
-    const h = Number(e.target.value);
-    [twiLayer, handLayer, shizenLayer, suidenLayer].forEach(l => applyHue(l, h));
+  // 将来読み込まれるタイルにも反映させる
+  function hookTileHue(layer, deg) {
+    layer.off('tileload'); // 二重登録防止
+    layer.on('tileload', (e) => { e.tile.style.filter = `hue-rotate(${deg}deg)`; });
   }
-});
 
-map.on("overlayadd", e => {
-  const h = Number(document.getElementById("hueRange").value);
-  applyHue(e.layer, h);
-});
+  // 各レイヤのUIイベントを束ねて紐付け
+  Object.values(tileDefs).forEach(def => {
+    const chk = document.getElementById(def.toggle);
+    const op  = document.getElementById(def.opacity);
+    const hue = document.getElementById(def.hue);
+
+    // 表示ON/OFF
+    chk.addEventListener('change', () => {
+      if (chk.checked) {
+        def.layer.addTo(map);
+        // 現在のHueを適用
+        applyHueToTileLayer(def.layer, Number(hue.value));
+        hookTileHue(def.layer, Number(hue.value));
+        def.layer.setOpacity(Number(op.value));
+      } else {
+        map.removeLayer(def.layer);
+      }
+    });
+
+    // 透明度
+    op.addEventListener('input', () => {
+      def.layer.setOpacity(Number(op.value));
+    });
+
+    // Hue（色相）
+    hue.addEventListener('input', () => {
+      const v = Number(hue.value);
+      applyHueToTileLayer(def.layer, v);
+      hookTileHue(def.layer, v);
+    });
+
+    // レイヤがLayerControl等から後でONになった場合にも再適用
+    map.on('overlayadd', (e) => {
+      if (e.layer === def.layer) {
+        applyHueToTileLayer(def.layer, Number(hue.value));
+        hookTileHue(def.layer, Number(hue.value));
+        def.layer.setOpacity(Number(op.value));
+        chk.checked = true;
+      }
+    });
+    map.on('overlayremove', (e) => {
+      if (e.layer === def.layer) {
+        chk.checked = false;
+      }
+    });
+  });
+
+  // ----------------------------
+  // レイヤ切替（Leaflet標準のUIも併用）
+  // ----------------------------
+  L.control.layers(
+    { 'OpenStreetMap': osm },
+    {
+      'TWI（湿潤度）': twiLayer,
+      'HAND（鉛直距離）': handLayer,
+      '自然的景観多様度': shizenLayer,
+      '水田占有率': suidenLayer
+    },
+    { collapsed: true } // 左パネルがあるのでこちらは折り畳み
+  ).addTo(map);
+
+  // ----------------------------
+  // 区境（大田地区） chichibuoota.geojson
+  // ----------------------------
+  let boundaryLayer = null;
+  let boundaryBounds = null;
+
+  function buildBoundary(color = '#1E88E5', weight = 2) {
+    if (boundaryLayer) {
+      map.removeLayer(boundaryLayer);
+      boundaryLayer = null;
+    }
+    fetch('./data/chichibuoota.geojson', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(geo => {
+        boundaryLayer = L.geoJSON(geo, {
+          style: { color, weight, fillOpacity: 0 }
+        }).addTo(map);
+        boundaryBounds = boundaryLayer.getBounds();
+      })
+      .catch(err => console.warn('boundary load error', err));
+  }
+  // 初期描画
+  buildBoundary();
+
+  // UI: 表示ON/OFF
+  const boundaryToggle = document.getElementById('boundaryToggle');
+  boundaryToggle.addEventListener('change', () => {
+    if (!boundaryLayer) return;
+    if (boundaryToggle.checked) boundaryLayer.addTo(map);
+    else map.removeLayer(boundaryLayer);
+  });
+  // UI: 色・太さ
+  const boundaryColor  = document.getElementById('boundaryColor');
+  const boundaryWeight = document.getElementById('boundaryWeight');
+  function refreshBoundaryStyle() {
+    if (boundaryLayer) {
+      boundaryLayer.setStyle({
+        color: boundaryColor.value,
+        weight: Number(boundaryWeight.value),
+        fillOpacity: 0
+      });
+    }
+  }
+  boundaryColor.addEventListener('input', refreshBoundaryStyle);
+  boundaryWeight.addEventListener('input', refreshBoundaryStyle);
+
+  // 範囲へフィット
+  document.getElementById('fitBoundary').addEventListener('click', () => {
+    if (boundaryBounds && boundaryBounds.isValid()) map.fitBounds(boundaryBounds.pad(0.1));
+  });
+
+  // ----------------------------
+  // ポイント（土壌） soil_points.geojson
+  // ----------------------------
+  let pointsLayer = null;
+  let pointMode   = 'ec'; // 'ec' or 'mono'
+  let pointColor  = '#ff6600';
+  let pointSize   = 7;
+
+  function getECColor(ec) {
+    return ec > 0.2 ? '#800026' :
+           ec > 0.15 ? '#E31A1C' :
+           ec > 0.10 ? '#FD8D3C' :
+                        '#FED976';
+  }
+
+  function buildPoints() {
+    if (pointsLayer) {
+      map.removeLayer(pointsLayer);
+      pointsLayer = null;
+    }
+    fetch('./data/soil_points.geojson', { cache: 'no-store' })
+      .then(r => r.json())
+      .then(json => {
+        pointsLayer = L.geoJSON(json, {
+          pointToLayer: (f, latlng) => {
+            const ec = f.properties?.EC;
+            const fill = (pointMode === 'ec') ? getECColor(ec) : pointColor;
+            return L.circleMarker(latlng, {
+              radius: pointSize,
+              fillColor: fill,
+              color: '#000',
+              weight: 1,
+              fillOpacity: 0.9
+            });
+          },
+          onEachFeature: (f, l) => {
+            const p = f.properties || {};
+            l.bindPopup(`
+              <b>${p.場所名 ?? ''}</b><hr>
+              field_id: ${p.field_id ?? ''}<br>
+              採取日: ${p.採取日 ?? ''}<br>
+              EC: ${p.EC ?? ''}<br>
+              pH: ${p.pH ?? ''}<br>
+              CEC: ${p.CEC ?? ''}<br>
+              C: ${p.C ?? ''}<br>
+              N: ${p.N ?? ''}<br>
+              BIOTREX: ${p.BIOTREX ?? ''}
+            `);
+          }
+        });
+        if (document.getElementById('pointsToggle').checked) {
+          pointsLayer.addTo(map);
+        }
+      })
+      .catch(err => console.warn('points load error', err));
+  }
+  // 初期描画
+  buildPoints();
+
+  // ポイントUI：表示ON/OFF
+  document.getElementById('pointsToggle').addEventListener('change', (e) => {
+    if (!pointsLayer) return;
+    if (e.target.checked) pointsLayer.addTo(map);
+    else map.removeLayer(pointsLayer);
+  });
+
+  // ポイントUI：配色モード（ECスケール / 単色）
+  document.querySelectorAll('input[name="ptMode"]').forEach(r => {
+    r.addEventListener('change', (e) => {
+      pointMode = e.target.value; // 'ec' or 'mono'
+      // 既存レイヤのスタイルを更新
+      if (!pointsLayer) return;
+      pointsLayer.eachLayer(marker => {
+        if (!marker.setStyle) return;
+        if (pointMode === 'ec') {
+          const ec = marker.feature?.properties?.EC;
+          marker.setStyle({ fillColor: getECColor(ec) });
+        } else {
+          marker.setStyle({ fillColor: pointColor });
+        }
+      });
+    });
+  });
+
+  // ポイントUI：単色カラー
+  document.getElementById('pointColor').addEventListener('input', (e) => {
+    pointColor = e.target.value;
+    if (!pointsLayer || pointMode !== 'mono') return;
+    pointsLayer.eachLayer(marker => marker.setStyle && marker.setStyle({ fillColor: pointColor }));
+  });
+
+  // ポイントUI：サイズ
+  document.getElementById('pointSize').addEventListener('input', (e) => {
+    pointSize = Number(e.target.value);
+    if (!pointsLayer) return;
+    pointsLayer.eachLayer(marker => marker.setStyle && marker.setStyle({ radius: pointSize }));
+  });
+
 </script>
-
 </body>
 </html>
