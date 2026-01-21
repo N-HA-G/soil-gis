@@ -49,6 +49,69 @@
     </div>
   </div>
 
+
+// ★ 1. 秩父市ポリゴンを読み込む（非同期）
+let chichibuMaskPolygon = null;
+
+fetch("./data/chichibu.geojson")
+  .then(r => r.json())
+  .then(geo => {
+    chichibuMaskPolygon = geo.features[0].geometry.coordinates;
+  });
+
+// ★ 2. マスク付きタイルレイヤ生成関数
+function maskedTileLayer(urlTemplate, options = {}) {
+
+  const tile = L.TileLayer.extend({
+    createTile: function (coords, done) {
+      const tile = document.createElement("canvas");
+      tile.width = tile.height = 256;
+      const ctx = tile.getContext("2d");
+
+      const img = new Image();
+      img.crossOrigin = "";
+      img.src = L.Util.template(urlTemplate, {
+        x: coords.x,
+        y: coords.y,
+        z: this._getZoomForUrl()
+      });
+
+      img.onload = () => {
+        if (!chichibuMaskPolygon) {
+          ctx.drawImage(img, 0, 0);
+          return done(null, tile);
+        }
+
+        // ---- ★ 2-1. ポリゴンが複数リングの場合（外周 + ホール）に対応 ----
+        ctx.save();
+        ctx.beginPath();
+
+        chichibuMaskPolygon.forEach(ring => {
+          ring[0].forEach(point => {
+            const latlng = L.latLng(point[1], point[0]);
+            const p = this._map.latLngToContainerPoint(latlng);
+            const cx = p.x - coords.x * 256;
+            const cy = p.y - coords.y * 256;
+            ctx.lineTo(cx, cy);
+          });
+          ctx.closePath();
+        });
+
+        ctx.clip();
+        ctx.drawImage(img, 0, 0);
+        ctx.restore();
+
+        done(null, tile);
+      };
+
+      return tile;
+    }
+  });
+
+  return new tile(options);
+}
+
+
   <!-- タイルレイヤ -->
   <div class="group">
     <b>タイルレイヤ</b>
