@@ -2,67 +2,78 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>土壌調査（ECODRR）Web GIS</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ✅ 正しい Leaflet 読み込み -->
+  <!-- Leaflet CSS -->
   <link rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js">
-  </script>
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    html, body, #map { height: 100%; margin: 0; }
+    html, body, #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
     .control-box {
-      background: white; padding: 10px;
-      border-radius: 6px; margin-bottom: 8px;
+      background: white;
+      padding: 10px;
+      border-radius: 6px;
+      margin-bottom: 8px;
       box-shadow: 0 2px 5px rgba(0,0,0,0.3);
       font-size: 14px;
+      line-height: 1.4;
     }
-    .control-box input { width: 150px; }
+    .control-box input {
+      width: 160px;
+    }
   </style>
 </head>
 
 <body>
-
 <div id="map"></div>
 
 <script>
-// ---------------------------------------------------
+// --------------------------------------
 // 地図初期化
-// ---------------------------------------------------
-const map = L.map('map', { center: [36.055, 139.07], zoom: 13 });
+// --------------------------------------
+const map = L.map("map", {
+  center: [36.055, 139.07],
+  zoom: 13
+});
 
+// ベースマップ
 const osm = L.tileLayer(
-  'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-  { maxZoom: 19 }).addTo(map);
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  { maxZoom: 19 }
+).addTo(map);
 
-
-// ---------------------------------------------------
-// タイルレイヤ（あなたのフォルダ構成に合わせたパス）
-// ---------------------------------------------------
-const twiLayer = L.tileLayer('./data/01_TWI_chichibu/{z}/{x}/{y}.png', {
+// --------------------------------------
+// Raster tile layers
+// --------------------------------------
+const twiLayer = L.tileLayer("./data/01_TWI_chichibu/{z}/{x}/{y}.png", {
   opacity: 0.8, minZoom: 12, maxZoom: 18
 });
-const handLayer = L.tileLayer('./data/02_HAND_chichibu/{z}/{x}/{y}.png', {
+const handLayer = L.tileLayer("./data/02_HAND_chichibu/{z}/{x}/{y}.png", {
   opacity: 0.8
 });
-const shizenLayer = L.tileLayer('./data/04_SHIZEN_chichibu/{z}/{x}/{y}.png', {
+const shizenLayer = L.tileLayer("./data/04_SHIZEN_chichibu/{z}/{x}/{y}.png", {
   opacity: 0.8
 });
-const suidenLayer = L.tileLayer('./data/05_suiden_chichibu/{z}/{x}/{y}.png', {
+const suidenLayer = L.tileLayer("./data/05_suiden_chichibu/{z}/{x}/{y}.png", {
   opacity: 0.8
 });
 
-// 初期表示で TWI を ON
+// 初期表示
 twiLayer.addTo(map);
 
-
-// ---------------------------------------------------
-// レイヤ切替 UI
-// ---------------------------------------------------
+// --------------------------------------
+// レイヤ切替
+// --------------------------------------
 L.control.layers(
   { "OpenStreetMap": osm },
   {
@@ -74,42 +85,53 @@ L.control.layers(
   { collapsed: false }
 ).addTo(map);
 
-
-// ---------------------------------------------------
+// --------------------------------------
 // 土壌ポイント（GeoJSON）
-// ---------------------------------------------------
-fetch('./data/soil_points.geojson')
-  .then(r => r.json())
-  .then(json => {
+// --------------------------------------
+fetch("./data/soil_points.geojson")
+  .then((res) => res.json())
+  .then((json) => {
     L.geoJSON(json, {
-      pointToLayer: (f, latlng) => L.circleMarker(latlng, {
-        radius: 7,
-        fillColor: "#ff6600",
-        color: "#000", weight: 1,
-        fillOpacity: 0.9
-      }),
-      onEachFeature: (f, l) => {
-        const p = f.properties;
-        l.bindPopup(`
-          <b>${p.場所名}</b><hr>
-          field_id: ${p.field_id}<br>
-          EC: ${p.EC}<br>
-          pH: ${p.pH}<br>
-          CEC: ${p.CEC}<br>
-          C: ${p.C}<br>
-          N: ${p.N}<br>
-          BIOTREX: ${p.BIOTREX}
-        `);
-      }
+      pointToLayer: (f, latlng) =>
+        L.circleMarker(latlng, {
+          radius: 7,
+          fillColor: "#ff6600",
+          color: "#000",
+          weight: 1,
+          fillOpacity: 0.9,
+        }),
+      onEachFeature: (f, layer) => {
+        const p = f.properties || {};
+        layer.bindPopup(`
+          <b>${p.場所名 ?? ""}</b><hr>
+          field_id: ${p.field_id ?? ""}<br>
+          EC: ${p.EC ?? ""}<br>
+          pH: ${p.pH ?? ""}<br>
+          CEC: ${p.CEC ?? ""}<br>
+          C: ${p.C ?? ""}<br>
+          N: ${p.N ?? ""      },
     }).addTo(map);
   });
 
+// --------------------------------------
+// 境界 GeoJSON（任意）
+// --------------------------------------
+fetch("./data/03_chikeitoishitu_saitama.geojson")
+  .then((r) => (r.ok ? r.json() : null))
+  .then((json) => {
+    if (!json) return;
+    const bLayer = L.geoJSON(json, {
+      style: { color: "#0066ff", weight: 2, fillOpacity: 0 },
+    }).addTo(map);
+    const b = bLayer.getBounds();
+    if (b.isValid()) map.fitBounds(b.pad(0.1));
+  });
 
-// ---------------------------------------------------
+// --------------------------------------
 // 透明度スライダー
-// ---------------------------------------------------
+// --------------------------------------
 const opacityCtrl = L.control({ position: "topright" });
-opacityCtrl.onAdd = function() {
+opacityCtrl.onAdd = () => {
   const div = L.DomUtil.create("div", "control-box");
   div.innerHTML = `
     <b>透明度</b><br>
@@ -120,19 +142,21 @@ opacityCtrl.onAdd = function() {
 };
 opacityCtrl.addTo(map);
 
-document.addEventListener("input", e => {
+// 透明度変更
+document.addEventListener("input", (e) => {
   if (e.target.id === "opacityRange") {
     const v = Number(e.target.value);
-    [twiLayer, handLayer, shizenLayer, suidenLayer].forEach(l => l.setOpacity(v));
+    [twiLayer, handLayer, shizenLayer, suidenLayer].forEach((l) =>
+      l.setOpacity(v)
+    );
   }
 });
 
-
-// ---------------------------------------------------
+// --------------------------------------
 // 色相（Hue）スライダー
-// ---------------------------------------------------
+// --------------------------------------
 const hueCtrl = L.control({ position: "topright" });
-hueCtrl.onAdd = function() {
+hueCtrl.onAdd = () => {
   const div = L.DomUtil.create("div", "control-box");
   div.innerHTML = `
     <b>色相（Hue）</b><br>
@@ -143,25 +167,27 @@ hueCtrl.onAdd = function() {
 };
 hueCtrl.addTo(map);
 
+// 色相適用
 function applyHue(layer, hue) {
   if (!layer._container) return;
   layer._container
     .querySelectorAll("img.leaflet-tile")
-    .forEach(img => img.style.filter = `hue-rotate(${hue}deg)`);
+    .forEach((img) => (img.style.filter = `hue-rotate(${hue}deg)`));
 }
 
-document.addEventListener("input", e => {
+document.addEventListener("input", (e) => {
   if (e.target.id === "hueRange") {
     const h = Number(e.target.value);
-    [twiLayer, handLayer, shizenLayer, suidenLayer].forEach(l => applyHue(l, h));
+    [twiLayer, handLayer, shizenLayer, suidenLayer].forEach((l) =>
+      applyHue(l, h)
+    );
   }
 });
 
-map.on("overlayadd", e => {
+map.on("overlayadd", (e) => {
   const h = Number(document.getElementById("hueRange").value);
   applyHue(e.layer, h);
 });
-
 </script>
 
 </body>
