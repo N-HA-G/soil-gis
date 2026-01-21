@@ -6,191 +6,169 @@
   <title>土壌調査（ECODRR）Web GIS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- ✅ Leaflet 正しい読み込み -->
-  <link
-    rel="stylesheet"
-    href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
-    integrity="sha512-sA+e2at3bQ7RJYb5Xn3Kf3oG1b9h3Qk7c2o7VPSqz0v8eYJm1bQIG2ZQq2r9nqk0Q4qBz2wCLr5wQxX3Yw4NwQ=="
-    crossorigin=""
-  />
-  <script
-    src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-    integrity="sha512-vMMmXtG6m94UpyTjL2q3F6u1H8Qip9u1E7s4A0mN3o1J5QkCkJcG3H3tG6pLCyq9N2z2m8lU2n9Gqk0w0x8xwQ=="
-    crossorigin=""
-  ></script>
+  <!-- ✅ 正しい Leaflet 読み込み -->
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <style>
-    html, body, #map { height: 100%; margin: 0; }
+    html, body, #map { height: 100%; margin: 0; padding: 0; }
     .control-box {
-      background: #fff;
-      padding: 10px 12px;
+      background: white;
+      padding: 10px;
       border-radius: 6px;
-      box-shadow: 0 1px 4px rgba(0,0,0,.2);
-      line-height: 1.4;
+      margin-bottom: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.3);
       font-size: 14px;
     }
-    .control-box input[type="range"] { width: 160px; }
+    .control-box input { width: 150px; }
   </style>
 </head>
+
 <body>
 <div id="map"></div>
 
 <script>
-  // ----------------------------
-  // 地図の初期化
-  // ----------------------------
-  const map = L.map('map', { center: [36.00, 139.08], zoom: 13 });
+ / 地図初期化
+  // ----------------------------------------
+  const map = L.map('map', { center: [36.055, 139.07], zoom: 13 });
 
   const osm = L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '&copy; OpenStreetMap contributors'
+    maxZoom: 19
   }).addTo(map);
 
-  // ----------------------------
-  // XYZタイル（あなたのフォルダ名に一致）
-  // ----------------------------
+  // ----------------------------------------
+  // あなたのデータに合わせた XYZ タイルレイヤ
+  // ----------------------------------------
   const twiLayer = L.tileLayer('./data/01_TWI_chichibu/{z}/{x}/{y}.png', {
     opacity: 0.8, minZoom: 12, maxZoom: 18
   });
+
   const handLayer = L.tileLayer('./data/02_HAND_chichibu/{z}/{x}/{y}.png', {
     opacity: 0.8
   });
+
   const shizenLayer = L.tileLayer('./data/04_SHIZEN_chichibu/{z}/{x}/{y}.png', {
     opacity: 0.8
   });
+
   const suidenLayer = L.tileLayer('./data/05_suiden_chichibu/{z}/{x}/{y}.png', {
     opacity: 0.8
   });
 
-  // 初期表示で TWI を ON に（色調整のテストがすぐできる）
+  // 初期表示
   twiLayer.addTo(map);
 
-  // ----------------------------
-  // レイヤー切替
-  // ----------------------------
-  const overlays = {
-    'TWI（湿潤度）': twiLayer,
-    'HAND（鉛直距離）': handLayer,
-    '自然的景観多様度': shizenLayer,
-    '水田占有率': suidenLayer
-  };
-  L.control.layers({ 'OpenStreetMap': osm }, overlays, { collapsed: false }).addTo(map);
+  // ----------------------------------------
+  // レイヤ切替
+  // ----------------------------------------
+  L.control.layers(
+    { "OpenStreetMap": osm },
+    {
+      "TWI（湿潤度）": twiLayer,
+      "HAND（鉛直距離）": handLayer,
+      "自然的景観多様度": shizenLayer,
+      "水田占有率": suidenLayer
+    },
+    { collapsed: false }
+  ).addTo(map);
 
-  // ----------------------------
+  // ----------------------------------------
   // 土壌ポイント（GeoJSON）
-  // ----------------------------
-  fetch('./data/soil_points.geojson', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : Promise.reject(r.status))
+  // ----------------------------------------
+  fetch('./data/soil_points.geojson')
+    .then(r => r.json())
     .then(json => {
       L.geoJSON(json, {
         pointToLayer: (f, latlng) => L.circleMarker(latlng, {
           radius: 7,
-          fillColor: getColor(f.properties?.EC),
-          color: '#000', weight: 1, fillOpacity: 0.9
+          fillColor: "#ff6600",
+          color: "#000",
+          weight: 1,
+          fillOpacity: 0.9
         }),
         onEachFeature: (f, layer) => {
-          const p = f.properties || {};
+          const p = f.properties;
           layer.bindPopup(`
-            <b>${p.場所名 ?? ''}</b><hr>
-            field_id: ${p.field_id ?? ''}<br>
-            採取日: ${p.採取日 ?? ''}<br>
-            EC: ${p.EC ?? ''}<br>
-            pH: ${p.pH ?? ''}<br>
-            CEC: ${p.CEC ?? ''}<br>
-            C: ${p.C ?? ''}<br>
-            N: ${p.N ?? ''}<br>
-            BIOTREX: ${p.BIOTREX ?? ''}
+            <b>${p.場所名}</b><hr>
+            EC: ${p.EC}<br>
+            pH: ${p.pH}<br>
+            CEC: ${p.CEC}<br>
+            C: ${p.C}<br>
+            N: ${p.N}<br>
+            BIOTREX: ${p.BIOTREX}
           `);
         }
       }).addTo(map);
-    })
-    .catch(e => console.warn('soil_points.geojson 読み込み失敗:', e));
+    });
 
-  function getColor(ec) {
-    return ec > 0.2  ? '#800026' :
-           ec > 0.15 ? '#E31A1C' :
-           ec > 0.10 ? '#FD8D3C' :
-                       '#FED976';
-  }
-
-  // ----------------------------
-  // 境界（あれば自動表示＆フィット）
-  // ファイル名は手元のものに合わせてください
-  // 例: ./data/chichibu_boundary.geojson
-  // ----------------------------
-  fetch('./data/03_chikeitoishitu_saitama.geojson', { cache: 'no-store' })
-    .then(r => r.ok ? r.json() : Promise.reject(r.status))
-    .then(geo => {
-      const bLayer = L.geoJSON(geo, {
-        style: { color: '#1E88E5', weight: 2, fillOpacity: 0 }
+  // ----------------------------------------
+  // 境界 GeoJSON（ある場合だけ表示）
+  // ----------------------------------------
+  fetch('./data/03_chikeitoishitu_saitama.geojson')
+    .then(r => r.ok ? r.json() : null)
+    .then(json => {
+      if (!json) return;
+      const bLayer = L.geoJSON(json, {
+        style: { color: "#0066ff", weight: 2, fillOpacity: 0 }
       }).addTo(map);
+
       const b = bLayer.getBounds();
       if (b.isValid()) map.fitBounds(b.pad(0.1));
-    })
-    .catch(() => {/* 境界が無ければ無視 */});
+    });
 
-  // ----------------------------
-  // 透明度スライダー（全タイルに適用）
-  // ----------------------------
-  const opacityCtrl = L.control({ position: 'topright' });
+  // ----------------------------------------
+  // 透明度スライダー
+  // ----------------------------------------
+  const opacityCtrl = L.control({ position: "topright" });
   opacityCtrl.onAdd = function() {
-    const div = L.DomUtil.create('div', 'control-box');
+    const div = L.DomUtil.create("div", "control-box");
     div.innerHTML = `
       <b>透明度</b><br>
       <input type="range" id="opacityRange" min="0" max="1" value="0.8" step="0.05">
     `;
-    // マップ操作と干渉しないように
-    L.DomEvent.disableClickPropagation(div);
     return div;
   };
   opacityCtrl.addTo(map);
 
-  document.addEventListener('input', (e) => {
-    if (e.target && e.target.id === 'opacityRange') {
+  document.addEventListener("input", e => {
+    if (e.target.id === "opacityRange") {
       const v = Number(e.target.value);
       [twiLayer, handLayer, shizenLayer, suidenLayer].forEach(l => l.setOpacity(v));
     }
   });
 
-  // ----------------------------
-  // 色相（Hue）スライダー（JPEGでも確実に効く）
-  // → 各レイヤの <img.leaflet-tile> に直接 filter を適用
-  // ----------------------------
-  const hueCtrl = L.control({ position: 'topright' });
+  // ----------------------------------------
+  // 色相（Hue）スライダー
+  // ----------------------------------------
+  const hueCtrl = L.control({ position: "topright" });
   hueCtrl.onAdd = function() {
-    const div = L.DomUtil.create('div', 'control-box');
+    const div = L.DomUtil.create("div", "control-box");
     div.innerHTML = `
       <b>色相（Hue）</b><br>
       <input type="range" id="hueRange" min="0" max="360" value="0">
     `;
-    L.DomEvent.disableClickPropagation(div);
     return div;
   };
   hueCtrl.addTo(map);
 
-  function applyHueToLayer(layer, hueDeg) {
-    if (!layer._container) return; // レイヤONのときだけ存在
-    const tiles = layer._container.querySelectorAll('img.leaflet-tile');
-    tiles.forEach(img => { img.style.filter = `hue-rotate(${hueDeg}deg)`; });
+  function applyHue(layer, deg) {
+    if (!layer._container) return;
+    const tiles = layer._container.querySelectorAll("img.leaflet-tile");
+    tiles.forEach(img => img.style.filter = `hue-rotate(${deg}deg)`);
   }
-  function hookTileLoadForHue(layer, hueDeg) {
-    layer.on('tileload', (e) => { e.tile.style.filter = `hue-rotate(${hueDeg}deg)`; });
-  }
-  // 初期フック
-  [twiLayer, handLayer, shizenLayer, suidenLayer].forEach(l => hookTileLoadForHue(l, 0));
 
-  document.addEventListener('input', (e) => {
-   
+  document.addEventListener("input", e => {
+    if (e.target.id === "hueRange") {
+      const h = Number(e.target.value);
+      [twiLayer, handLayer, shizenLayer, suidenLayer].forEach(l => applyHue(l, h));
+    }
   });
 
-  // レイヤが後からONになったときも、現在のHueを反映
-  map.on('overlayadd', (e) => {
-    const slider = document.getElementById('hueRange');
-    const hue = slider ? Number(slider.value) : 0;
-    applyHueToLayer(e.layer, hue);
-    e.layer.off('tileload'); // 二重登録防止
-    hookTileLoadForHue(e.layer, hue);
+  map.on("overlayadd", e => {
+    const h = Number(document.getElementById("hueRange").value);
+    applyHue(e.layer, h);
   });
+
 </script>
 </body>
 </html>
