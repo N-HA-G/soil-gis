@@ -13,34 +13,33 @@
   <style>
     html, body, #map { height: 100%; margin: 0; padding: 0; background: #000; }
 
-    /* ★ UI（左側パネル）*/
+    /* 左の操作パネル */
     .panel {
-      position: absolute;
-      top: 10px; left: 10px;
-      z-index: 1000;
-      background: white;
-      padding: 12px;
-      border-radius: 8px;
+      position: absolute; top: 10px; left: 10px; z-index: 1000;
+      background: #fff; padding: 12px; border-radius: 8px;
       box-shadow: 0 2px 6px rgba(0,0,0,.25);
-      width: 330px;
-      font-size: 14px;
-      max-height: calc(100vh - 20px);
-      overflow-y: auto;
+      width: 330px; font-size: 14px;
+      max-height: calc(100vh - 20px); overflow-y: auto;
     }
+    .panel h3 { margin: 0 0 8px; font-size: 16px; }
     .group { border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; }
     .row { display: flex; align-items: center; gap: 6px; margin: 5px 0; }
     .row label { width: 120px; }
     .row input[type="range"] { flex: 1; }
     .row input[type="color"] { width: 40px; height: 26px; padding: 0; }
     .small { font-size: 12px; }
- >
+  </style>
+</head>
 
-<!-- ★ 左側パネル UI -->
-<div class="panel">
+<body>
 
+<div id="map"></div>
+
+<!-- 左側 UI（Aレイアウト） -->
+<div class="panel" id="panel">
   <h3>レイヤ操作（秩父市・大田地区）</h3>
 
-  <!-- 背景 -->
+  <!-- 背景 OSM -->
   <div class="group">
     <b>背景（OSM）</b>
     <div class="row">
@@ -49,115 +48,52 @@
     </div>
   </div>
 
-
-// ★ 1. 秩父市ポリゴンを読み込む（非同期）
-let chichibuMaskPolygon = null;
-
-fetch("./data/chichibu.geojson")
-  .then(r => r.json())
-  .then(geo => {
-    chichibuMaskPolygon = geo.features[0].geometry.coordinates;
-  });
-
-// ★ 2. マスク付きタイルレイヤ生成関数
-function maskedTileLayer(urlTemplate, options = {}) {
-
-  const tile = L.TileLayer.extend({
-    createTile: function (coords, done) {
-      const tile = document.createElement("canvas");
-      tile.width = tile.height = 256;
-      const ctx = tile.getContext("2d");
-
-      const img = new Image();
-      img.crossOrigin = "";
-      img.src = L.Util.template(urlTemplate, {
-        x: coords.x,
-        y: coords.y,
-        z: this._getZoomForUrl()
-      });
-
-      img.onload = () => {
-        if (!chichibuMaskPolygon) {
-          ctx.drawImage(img, 0, 0);
-          return done(null, tile);
-        }
-
-        // ---- ★ 2-1. ポリゴンが複数リングの場合（外周 + ホール）に対応 ----
-        ctx.save();
-        ctx.beginPath();
-
-        chichibuMaskPolygon.forEach(ring => {
-          ring[0].forEach(point => {
-            const latlng = L.latLng(point[1], point[0]);
-            const p = this._map.latLngToContainerPoint(latlng);
-            const cx = p.x - coords.x * 256;
-            const cy = p.y - coords.y * 256;
-            ctx.lineTo(cx, cy);
-          });
-          ctx.closePath();
-        });
-
-        ctx.clip();
-        ctx.drawImage(img, 0, 0);
-        ctx.restore();
-
-        done(null, tile);
-      };
-
-      return tile;
-    }
-  });
-
-  return new tile(options);
-}
-
-
-  <!-- タイルレイヤ -->
+  <!-- タイルレイヤ（市域マスク適用） -->
   <div class="group">
     <b>タイルレイヤ</b>
 
-    <!-- ① TWI -->
-    <div class="row"><input type="checkbox" id="twiToggle"><label>TWI（湿潤度）</label></div>
+    <!-- TWI -->
+    <div class="row"><input type="checkbox" id="twiToggle"><label for="twiToggle">TWI（湿潤度）</label></div>
     <div class="row"><label class="small">透明度</label><input id="twiOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
     <div class="row"><label class="small">色相 Hue</label><input id="twiHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">彩度 Sat</label><input id="twiSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">明度 Bri</label><input id="twiBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
 
-    <!-- ② HAND -->
-    <div class="row"><input type="checkbox" id="handToggle"><label>HAND（鉛直距離）</label></div>
+    <!-- HAND -->
+    <div class="row"><input type="checkbox" id="handToggle"><label for="handToggle">HAND（鉛直距離）</label></div>
     <div class="row"><label class="small">透明度</label><input id="handOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
     <div class="row"><label class="small">Hue</label><input id="handHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="handSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="handBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
 
-    <!-- ③ 自然的景観 -->
-    <div class="row"><input type="checkbox" id="shizenToggle"><label>自然的景観</label></div>
+    <!-- 自然的景観 -->
+    <div class="row"><input type="checkbox" id="shizenToggle"><label for="shizenToggle">自然的景観</label></div>
     <div class="row"><label class="small">透明度</label><input id="shizenOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
     <div class="row"><label class="small">Hue</label><input id="shizenHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="shizenSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="shizenBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
 
-    <!-- ④ 水田 -->
-    <div class="row"><input type="checkbox" id="suidenToggle"><label>水田占有率</label></div>
+    <!-- 水田 -->
+    <div class="row"><input type="checkbox" id="suidenToggle"><label for="suidenToggle">水田占有率</label></div>
     <div class="row"><label class="small">透明度</label><input id="suidenOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
     <div class="row"><label class="small">Hue</label><input id="suidenHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="suidenSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="suidenBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
   </div>
 
-  <!-- 区境 -->
+  <!-- 区境（大田地区） -->
   <div class="group">
     <b>区境（大田地区）</b>
-    <div class="row"><input type="checkbox" id="boundaryToggle" checked><label>chichibuoota.geojson</label></div>
+    <div class="row"><input type="checkbox" id="boundaryToggle" checked><label for="boundaryToggle">chichibuoota.geojson</label></div>
     <div class="row"><label class="small">線色</label><input type="color" id="boundaryColor" value="#ff0066"></div>
     <div class="row"><label class="small">太さ</label><input id="boundaryWeight" type="range" min="1" max="6" step="1" value="3"></div>
     <button id="fitBoundary" class="small">範囲へ</button>
   </div>
 
-  <!-- ポイント -->
+  <!-- 土壌ポイント -->
   <div class="group">
     <b>土壌ポイント</b>
-    <div class="row"><input type="checkbox" id="pointsToggle" checked><label>表示</label></div>
+    <div class="row"><input type="checkbox" id="pointsToggle" checked><label for="pointsToggle">表示</label></div>
     <div class="row small">
       <label><input type="radio" name="ptMode" value="ec" checked> ECスケール</label>
       <label><input type="radio" name="ptMode" value="mono"> 単色</label>
@@ -165,195 +101,246 @@ function maskedTileLayer(urlTemplate, options = {}) {
     </div>
     <div class="row"><label class="small">サイズ</label><input id="pointSize" type="range" min="4" max="14" step="1" value="8"></div>
   </div>
-
-</div><!-- panel -->
+</div>
 
 <script>
-/* ==========================================================
-   地図初期化
-========================================================== */
-const map = L.map("map", { center: [36.055,139.07], zoom: 13 });
+/* ==========================
+   基本：地図とOSM
+========================== */
+const map = L.map("map", { center: [36.055, 139.07], zoom: 13 });
+const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  { maxZoom: 19, opacity: 1 }).addTo(map);
 
-const osm = L.tileLayer(
-  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  { maxZoom: 19, opacity: 1 }
-).addTo(map);
-
+// パネルからのクリックで地図が動かないように
+L.DomEvent.disableClickPropagation(document.getElementById('panel'));
 document.getElementById("baseOpacity").addEventListener("input", e =>
   osm.setOpacity(Number(e.target.value))
 );
 
-/* ==========================================================
-   タイルレイヤ：定義
-========================================================== */
-function colorFilter(hue, sat, bri) {
-  return `hue-rotate(${hue}deg) saturate(${sat}) brightness(${bri})`;
-}
+/* ==========================
+   市域マスク付きタイルレイヤ
+========================== */
+// 1) 秩父市のGeoJSONを読み込み
+let chichibuMask = null;
+fetch("./data/chichibu.geojson")
+  .then(r => r.json())
+  .then(geo => { chichibuMask = geo; })
+  .catch(err => console.warn("chichibu.geojson 読み込み失敗:", err));
 
-function applyColor(layer, hue, sat, bri) {
-  if (!layer._container) return;
-  layer._container.querySelectorAll("img.leaflet-tile").forEach(img =>
-    img.style.filter = colorFilter(hue,sat,bri)
-  );
-}
+// 2) マスク付きタイルクラス（Canvasタイル）
+const MaskedTileLayer = L.TileLayer.extend({
+  initialize: function(url, options) {
+    L.TileLayer.prototype.initialize.call(this, url, options || {});
+    this._filter = 'none'; // canvas描画時 filter
+  },
+  setFilter: function(h,s,b){    // Hue/Sat/Bri を1本の文字列にして保持
+    this._filter = `hue-rotate(${h}deg) saturate(${s}) brightness(${b})`;
+    this.redraw();
+  },
+  createTile: function(coords, done) {
+    const size = 256;
+    const tile = L.DomUtil.create('canvas', 'leaflet-tile');
+    tile.width = tile.height = size;
+    const ctx = tile.getContext('2d');
 
-function hookColor(layer, hue, sat, bri){
-  layer.off("tileload");
-  layer.on("tileload", e=>{
-    e.tile.style.filter = colorFilter(hue,sat,bri);
-  });
-}
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.src = this.getTileUrl(coords);
 
-const twiLayer    = L.tileLayer("./data/01_TWI_chichibu/{z}/{x}/{y}.png");
-const handLayer   = L.tileLayer("./data/02_HAND_chichibu/{z}/{x}/{y}.png");
-const shizenLayer = L.tileLayer("./data/04_SHIZEN_chichibu/{z}/{x}/{y}.png");
-const suidenLayer = L.tileLayer("./data/05_suiden_chichibu/{z}/{x}/{y}.png");
+    img.onload = () => {
+      // マスクが未読込ならそのまま
+      if (!chichibuMask) {
+        ctx.filter = this._filter;
+        ctx.drawImage(img, 0, 0);
+        return done(null, tile);
+      }
 
-/* レイヤごと設定 */
-const defs = {
-  twi:    {lay:twiLayer, t:"twiToggle", o:"twiOpacity", h:"twiHue", s:"twiSat", b:"twiBri"},
-  hand:   {lay:handLayer, t:"handToggle", o:"handOpacity", h:"handHue", s:"handSat", b:"handBri"},
-  shizen: {lay:shizenLayer, t:"shizenToggle", o:"shizenOpacity", h:"shizenHue", s:"shizenSat", b:"shizenBri"},
-  suiden: {lay:suidenLayer, t:"suidenToggle", o:"suidenOpacity", h:"suidenHue", s:"suidenSat", b:"suidenBri"},
-};
+      // クリップパスを作る
+      ctx.save();
+      ctx.beginPath();
 
-/* UI 反映 */
-Object.values(defs).forEach(d=>{
-  const chk = document.getElementById(d.t);
-  const op  = document.getElementById(d.o);
-  const hue = document.getElementById(d.h);
-  const sat = document.getElementById(d.s);
-  const bri = document.getElementById(d.b);
+      const z = coords.z;
+      const tileOriginX = coords.x * size;
+      const tileOriginY = coords.y * size;
 
-  chk.addEventListener("change",()=>{
-    if(chk.checked){
-      d.lay.addTo(map);
-      d.lay.setOpacity(Number(op.value));
-      applyColor(d.lay, hue.value, sat.value, bri.value);
-      hookColor(d.lay, hue.value, sat.value, bri.value);
-    }else{
-      map.removeLayer(d.lay);
-    }
-  });
+      const geom = chichibuMask.features[0].geometry;
+      // Polygon or MultiPolygon どちらでも処理
+      const polys = (geom.type === 'MultiPolygon') ? geom.coordinates : [geom.coordinates];
 
-  op.addEventListener("input",()=> d.lay.setOpacity(Number(op.value)));
-  hue.addEventListener("input",()=> applyColor(d.lay,hue.value,sat.value,bri.value));
-  sat.addEventListener("input",()=> applyColor(d.lay,hue.value,sat.value,bri.value));
-  bri.addEventListener("input",()=> applyColor(d.lay,hue.value,sat.value,bri.value));
+      polys.forEach(polygon => {
+        polygon.forEach(ring => {
+          ring.forEach((pt, i) => {
+            const latlng = L.latLng(pt[1], pt[0]);
+            const p = map.project(latlng, z);     // ピクセル座標（ズームz）
+            const cx = p.x - tileOriginX;        // タイル内座標
+            const cy = p.y - tileOriginY;
+            if (i === 0) ctx.moveTo(cx, cy);
+            else ctx.lineTo(cx, cy);
+          });
+          ctx.closePath();
+        });
+      });
+
+      // クリップしてから描画
+      ctx.clip('nonzero'); // 外側を切り落とす
+      ctx.filter = this._filter;  // 色変換（Hue/Sat/Bri）
+      ctx.drawImage(img, 0, 0);
+      ctx.restore();
+
+      done(null, tile);
+    };
+
+    img.onerror = () => done(null, tile);
+    return tile;
+  }
 });
 
-/* ==========================================================
-   区境（大田地区） chichibuoota.geojson
-========================================================== */
-let boundaryLayer=null, boundaryBounds=null;
+// 3) レイヤ生成（最初は非表示。UIでON）
+const twiLayer    = new MaskedTileLayer("./data/01_TWI_chichibu/{z}/{x}/{y}.png");
+const handLayer   = new MaskedTileLayer("./data/02_HAND_chichibu/{z}/{x}/{y}.png");
+const shizenLayer = new MaskedTileLayer("./data/04_SHIZEN_chichibu/{z}/{x}/{y}.png");
+const suidenLayer = new MaskedTileLayer("./data/05_suiden_chichibu/{z}/{x}/{y}.png");
 
-function loadBoundary(){
+/* ==========================
+   各レイヤ UI 連携
+========================== */
+const defs = {
+  twi:    {lay:twiLayer,    chk:'twiToggle',    op:'twiOpacity',    h:'twiHue',    s:'twiSat',    b:'twiBri'},
+  hand:   {lay:handLayer,   chk:'handToggle',   op:'handOpacity',   h:'handHue',   s:'handSat',   b:'handBri'},
+  shizen: {lay:shizenLayer, chk:'shizenToggle', op:'shizenOpacity', h:'shizenHue', s:'shizenSat', b:'shizenBri'},
+  suiden: {lay:suidenLayer, chk:'suidenToggle', op:'suidenOpacity', h:'suidenHue', s:'suidenSat', b:'suidenBri'},
+};
+
+Object.values(defs).forEach(d => {
+  const c = id => document.getElementById(id);
+  const chk = c(d.chk), op = c(d.op), h = c(d.h), s = c(d.s), b = c(d.b);
+
+  const applyAll = () => {
+    d.lay.setOpacity(Number(op.value));
+    d.lay.setFilter(Number(h.value), Number(s.value), Number(b.value));
+  };
+
+  chk.addEventListener('change', () => {
+    if (chk.checked) { d.lay.addTo(map); applyAll(); }
+    else map.removeLayer(d.lay);
+  });
+
+  [op,h,s,b].forEach(el => el.addEventListener('input', () => {
+    if (!map.hasLayer(d.lay)) return; // OFF中は無視
+    applyAll();
+  }));
+});
+
+/* ==========================
+   レイヤコントロール（併用）
+========================== */
+L.control.layers(
+  { "OpenStreetMap": osm },
+  {
+    "TWI（湿潤度）": twiLayer,
+    "HAND（鉛直距離）": handLayer,
+    "自然的景観": shizenLayer,
+    "水田占有率": suidenLayer
+  },
+  { collapsed: true }
+).addTo(map);
+
+/* ==========================
+   大田地区の区境
+========================== */
+let boundaryLayer = null, boundaryBounds = null;
+
+function loadBoundary() {
   fetch("./data/chichibuoota.geojson")
-    .then(r=>r.json())
-    .then(js=>{
-      boundaryLayer = L.geoJSON(js,{
-        style:{
+    .then(r => r.json())
+    .then(js => {
+      if (boundaryLayer) map.removeLayer(boundaryLayer);
+      boundaryLayer = L.geoJSON(js, {
+        style: {
           color: document.getElementById("boundaryColor").value,
-          weight:Number(document.getElementById("boundaryWeight").value),
-          fillOpacity:0
+          weight: Number(document.getElementById("boundaryWeight").value),
+          fillOpacity: 0
         }
       }).addTo(map);
       boundaryBounds = boundaryLayer.getBounds();
-    });
+    })
+    .catch(e => console.warn("chichibuoota 読み込み失敗:", e));
 }
 loadBoundary();
 
-document.getElementById("boundaryToggle").addEventListener("change",e=>{
-  if(!boundaryLayer)return;
-  if(e.target.checked) boundaryLayer.addTo(map);
+document.getElementById("boundaryToggle").addEventListener("change", e => {
+  if (!boundaryLayer) return;
+  if (e.target.checked) boundaryLayer.addTo(map);
   else map.removeLayer(boundaryLayer);
 });
-
-document.getElementById("boundaryColor").addEventListener("input",()=>{
-  if(boundaryLayer)
-    boundaryLayer.setStyle({color:boundaryColor.value});
+document.getElementById("boundaryColor").addEventListener("input", () => {
+  boundaryLayer && boundaryLayer.setStyle({ color: boundaryColor.value });
+});
+document.getElementById("boundaryWeight").addEventListener("input", () => {
+  boundaryLayer && boundaryLayer.setStyle({ weight: Number(boundaryWeight.value) });
+});
+document.getElementById("fitBoundary").addEventListener("click", () => {
+  if (boundaryBounds && boundaryBounds.isValid()) map.fitBounds(boundaryBounds.pad(0.1));
 });
 
-document.getElementById("boundaryWeight").addEventListener("input",()=>{
-  if(boundaryLayer)
-    boundaryLayer.setStyle({weight:Number(boundaryWeight.value)});
-});
-
-document.getElementById("fitBoundary").addEventListener("click",()=>{
-  if(boundaryBounds && boundaryBounds.isValid())
-    map.fitBounds(boundaryBounds.pad(0.1));
-});
-
-/* ==========================================================
+/* ==========================
    土壌ポイント
-========================================================== */
-let pointsLayer=null;
-let pointMode="ec";
-let pointColor="#ffaa00";
-let pointSize=8;
+========================== */
+let pointsLayer = null;
+let pointMode = "ec";
+let monoColor = "#ffaa00";
+let pointSize = 8;
 
-function getECColor(v){
-  return v>0.2 ? "#800026":
-         v>0.15? "#E31A1C":
-         v>0.1 ? "#FD8D3C":
-                 "#FED976";
+function ecColor(v) {
+  return v > 0.2 ? "#800026" :
+         v > 0.15 ? "#E31A1C" :
+         v > 0.10 ? "#FD8D3C" : "#FED976";
 }
 
-function loadPoints(){
-  fetch("./data/soil_points.geojson")
-    .then(r=>r.json())
-    .then(js=>{
-      pointsLayer = L.geoJSON(js,{
-        pointToLayer:(f,latlng)=>{
-          let col = pointMode==="ec" ? getECColor(f.properties?.EC) : pointColor;
-          return L.circleMarker(latlng,{
-            radius:pointSize,
-            fillColor:col,color:"#000",weight:1,fillOpacity:0.9
+function loadPoints() {
+  fetch("./data/soil_points.geojson", { cache: "no-store" })
+    .then(r => r.json())
+    .then(js => {
+      if (pointsLayer) map.removeLayer(pointsLayer);
+      pointsLayer = L.geoJSON(js, {
+        pointToLayer: (f, latlng) => {
+          const col = (pointMode === "ec") ? ecColor(f.properties?.EC) : monoColor;
+          return L.circleMarker(latlng, {
+            radius: pointSize, fillColor: col, color: "#000", weight: 1, fillOpacity: 0.9
           });
         }
       });
-      if(document.getElementById("pointsToggle").checked)
-        pointsLayer.addTo(map);
-    });
+      if (document.getElementById("pointsToggle").checked) pointsLayer.addTo(map);
+    })
+    .catch(e => console.warn("soil_points 読み込み失敗:", e));
 }
-
 loadPoints();
 
-/* ポイント表示 */
-document.getElementById("pointsToggle").addEventListener("change",e=>{
-  if(!pointsLayer)return;
-  if(e.target.checked) pointsLayer.addTo(map);
+document.getElementById("pointsToggle").addEventListener("change", e => {
+  if (!pointsLayer) return;
+  if (e.target.checked) pointsLayer.addTo(map);
   else map.removeLayer(pointsLayer);
 });
-
-/* 配色モード */
-document.querySelectorAll("input[name='ptMode']").forEach(r=>{
-  r.addEventListener("change",()=>{
-    pointMode = r.value;
-    if(!pointsLayer)return;
-    pointsLayer.eachLayer(m=>{
-      if(m.setStyle){
-        let ec=m.feature.properties.EC;
-        m.setStyle({fillColor: pointMode==="ec"?getECColor(ec):pointColor});
-      }
+document.querySelectorAll("input[name='ptMode']").forEach(r => {
+  r.addEventListener("change", e => {
+    pointMode = e.target.value;
+    if (!pointsLayer) return;
+    pointsLayer.eachLayer(m => {
+      const ec = m.feature?.properties?.EC;
+      m.setStyle && m.setStyle({ fillColor: pointMode === "ec" ? ecColor(ec) : monoColor });
     });
   });
 });
-
-/* 単色 */
-document.getElementById("pointColor").addEventListener("input",e=>{
-  pointColor=e.target.value;
-  if(pointMode!=="mono"||!pointsLayer)return;
-  pointsLayer.eachLayer(m=> m.setStyle && m.setStyle({fillColor:pointColor}));
+document.getElementById("pointColor").addEventListener("input", e => {
+  monoColor = e.target.value;
+  if (pointMode !== "mono" || !pointsLayer) return;
+  pointsLayer.eachLayer(m => m.setStyle && m.setStyle({ fillColor: monoColor }));
 });
-
-/* サイズ */
-document.getElementById("pointSize").addEventListener("input",e=>{
-  pointSize=Number(e.target.value);
-  if(!pointsLayer)return;
-  pointsLayer.eachLayer(m=> m.setStyle && m.setStyle({radius:pointSize}));
+document.getElementById("pointSize").addEventListener("input", e => {
+  pointSize = Number(e.target.value);
+  if (!pointsLayer) return;
+  pointsLayer.eachLayer(m => m.setStyle && m.setStyle({ radius: pointSize }));
 });
-
 </script>
 
 </body>
