@@ -50,6 +50,8 @@
     <div class="row"><label class="small">Hue</label><input id="twiHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="twiSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="twiBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
+    <div class="group"><b>凡例</b><div id="legends"></div></div>
+
 
     <!-- HAND -->
     <div class="row"><input type="checkbox" id="handToggle"><label for="handToggle">HAND（鉛直距離）</label></div>
@@ -57,6 +59,7 @@
     <div class="row"><label class="small">Hue</label><input id="handHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="handSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="handBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
+    <div class="group"><b>凡例</b><div id="legends"></div></div>
 
     <!-- TIKEI（03_Tikei_chichibu を使用） -->
     <div class="row"><input type="checkbox" id="tikeiToggle"><label for="tikeiToggle">TIKEI（地形）</label></div>
@@ -64,13 +67,17 @@
     <div class="row"><label class="small">Hue</label><input id="tikeiHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="tikeiSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="tikeiBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
+    <div class="group"><b>凡例</b><div id="legends"></div></div>
 
     <!-- KEIKAN（自然的景観） -->
-    <div class="row"><input type="checkbox" id="keikanToggle"><label for="keikanToggle">自然的景観</label></div>
+
+<div class="row">
+    <input type="checkbox" id="tikeiToggle"><label for="tikeiToggle">地形・地質等から期待される雨水浸透機能</label></div>
     <div class="row"><label class="small">透明度</label><input id="keikanOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
     <div class="row"><label class="small">Hue</label><input id="keikanHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="keikanSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="keikanBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
+    <div class="group"><b>凡例</b><div id="legends"></div></div>
 
     <!-- SUIDEN -->
     <div class="row"><input type="checkbox" id="suidenToggle"><label for="suidenToggle">水田占有率</label></div>
@@ -78,6 +85,7 @@
     <div class="row"><label class="small">Hue</label><input id="suidenHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="suidenSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="suidenBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
+    <div class="group"><b>凡例</b><div id="legends"></div></div>
   </div>
 
   <!-- 地区（区境・ポイント） -->
