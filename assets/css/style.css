@@ -1,0 +1,35 @@
+
+html, body, #map { height: 100%; margin: 0; padding: 0; background: #000; }
+
+.panel {
+  position: absolute; top: 10px; left: 10px; z-index: 1000;
+  background: #fff; padding: 12px; border-radius: 8px;
+  box-shadow: 0 2px 6px rgba(0,0,0,.25);
+  width: 360px; font-size: 14px;
+  max-height: calc(100vh - 20px); overflow-y: auto;
+}
+.panel h3 { margin: 6px 0 8px; font-size: 16px; }
+.group { border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; }
+
+.row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
+.row label { min-width: 120px; }
+.row input[type="range"] { flex: 1; }
+.row input[type="color"] { width: 40px; height: 26px; padding: 0; }
+.small { font-size: 12px; }
+
+/* タブ */
+.tabs { display: flex; gap: 6px; flex-wrap: wrap; }
+.tab {
+  border: 1px solid #ddd; padding: 4px 10px; border-radius: 999px;
+  background: #f7f7f7; cursor: pointer; user-select: none;
+}
+.tab.active { background: #0a66c2; color: #fff; border-color: #0a66c2; }
+.subtabs { margin-top: 6px; }
+
+/* 地区のUI */
+.dist-row { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; margin: 6px 0; }
+.fit-btn {
+  font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; background: #fafafa; cursor: pointer;
+}
+.fit-btn:hover { background: #f0f0f0; }
+``
