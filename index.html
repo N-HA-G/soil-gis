@@ -10,46 +10,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <style>
-    html, body, #map { height: 100%; margin: 0; padding: 0; background: #000; }
-
-    /* 左パネル */
-    .panel {
-      position: absolute; top: 10px; left: 10px; z-index: 1000;
-      background: #fff; padding: 12px; border-radius: 8px;
-      box-shadow: 0 2px 6px rgba(0,0,0,.25);
-      width: 360px; font-size: 14px;
-      max-height: calc(100vh - 20px); overflow-y: auto;
-    }
-    .panel h3 { margin: 6px 0 8px; font-size: 16px; }
-    .group { border-top: 1px solid #eee; margin-top: 10px; padding-top: 10px; }
-
-    /* 行レイアウト */
-    .row { display: flex; align-items: center; gap: 6px; margin: 6px 0; }
-    .row label { min-width: 120px; }
-    .row input[type="range"] { flex: 1; }
-    .row input[type="color"] { width: 40px; height: 26px; padding: 0; }
-    .small { font-size: 12px; }
-
-    /* タブ */
-    .tabs { display: flex; gap: 6px; flex-wrap: wrap; }
-    .tab {
-      border: 1px solid #ddd; padding: 4px 10px; border-radius: 999px;
-      background: #f7f7f7; cursor: pointer; user-select: none;
-    }
-    .tab.active { background: #0a66c2; color: #fff; border-color: #0a66c2; }
-
-    /* 市区町村タブは2段目 */
-    .subtabs { margin-top: 6px; }
-    .badge { font-size: 11px; padding: 0 6px; border-radius: 999px; background: #eee; margin-left: 6px; }
-
-    /* 区境の行 */
-    .dist-row { display: grid; grid-template-columns: 1fr auto auto; gap: 6px; align-items: center; margin: 6px 0; }
-    .fit-btn {
-      font-size: 12px; padding: 4px 8px; border-radius: 6px; border: 1px solid #ccc; background: #fafafa; cursor: pointer;
-    }
-    .fit-btn:hover { background: #f0f0f0; }
-  </style>
+  <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
 
@@ -58,19 +19,19 @@
 <div class="panel" id="panel">
   <h3>土壌調査（ECODRR）Web GIS</h3>
 
-  <!-- タブ：都道府県 -->
+  <!-- 都道府県タブ -->
   <div class="group">
     <b>都道府県</b>
     <div id="prefTabs" class="tabs"></div>
   </div>
 
-  <!-- タブ：市区町村 -->
+  <!-- 市区町村タブ -->
   <div class="group">
     <b>市区町村</b>
     <div id="cityTabs" class="tabs subtabs"></div>
   </div>
 
-  <!-- ベース（OSM） -->
+  <!-- 背景OSM -->
   <div class="group">
     <b>背景（OpenStreetMap）</b>
     <div class="row">
@@ -79,7 +40,7 @@
     </div>
   </div>
 
-  <!-- タイルレイヤ（市域マスク） -->
+  <!-- タイルレイヤ（市域マスク適用） -->
   <div class="group">
     <b>タイルレイヤ（市域マスク適用）</b>
 
@@ -97,14 +58,14 @@
     <div class="row"><label class="small">Sat</label><input id="handSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="handBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
 
-    <!-- TIKEI（地形）※ 03_Tikei_chichibu を使用 -->
-    <div class="row"><input type="checkbox" id="tikeiToggle"><label for="tikeiToggle">TIKEI（地形・陰影等）</label></div>
+    <!-- TIKEI（03_Tikei_chichibu を使用） -->
+    <div class="row"><input type="checkbox" id="tikeiToggle"><label for="tikeiToggle">TIKEI（地形）</label></div>
     <div class="row"><label class="small">透明度</label><input id="tikeiOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
     <div class="row"><label class="small">Hue</label><input id="tikeiHue" type="range" min="0" max="360" value="0"></div>
     <div class="row"><label class="small">Sat</label><input id="tikeiSat" type="range" min="0" max="4" step="0.1" value="1"></div>
     <div class="row"><label class="small">Bri</label><input id="tikeiBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
 
-    <!-- KEIKAN（自然的景観など、フォルダ名に合わせて） -->
+    <!-- KEIKAN（自然的景観） -->
     <div class="row"><input type="checkbox" id="keikanToggle"><label for="keikanToggle">自然的景観</label></div>
     <div class="row"><label class="small">透明度</label><input id="keikanOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
     <div class="row"><label class="small">Hue</label><input id="keikanHue" type="range" min="0" max="360" value="0"></div>
@@ -119,7 +80,7 @@
     <div class="row"><label class="small">Bri</label><input id="suidenBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
   </div>
 
-  <!-- 地区レイヤ（区境・ポイント） -->
+  <!-- 地区（区境・ポイント） -->
   <div class="group">
     <b>地区（区境・ポイント）</b>
     <div id="districtList"></div>
@@ -137,378 +98,7 @@
   </div>
 </div>
 
-<script>
-/* ==========================================================
-   設定（CATALOG）：都道府県→市区町村→タイル/地区のパス
-   これを増やすだけでタブとレイヤが増えます
-========================================================== */
-const CATALOG = {
-  "Saitama": {
-    display: "埼玉",
-    cities: {
-      "Chichibu": {
-        display: "秩父",
-        center: [36.055, 139.07],
-        zoom: 13,
-        cityMask: "data/Saitama/Chichibu/chichibu.geojson",
-        tiles: {
-          twi:    "data/Saitama/Chichibu/01_TWI_chichibu/{z}/{x}/{y}.png",
-          hand:   "data/Saitama/Chichibu/02_HAND_chichibu/{z}/{x}/{y}.png",
-          tikei:  "data/Saitama/Chichibu/03_Tikei_chichibu/{z}/{x}/{y}.png", // ← 使用する
-          keikan: "data/Saitama/Chichibu/04_Keikan_chichibu/{z}/{x}/{y}.png", // フォルダ名に合わせて
-          suiden: "data/Saitama/Chichibu/05_Suiden_chichibu/{z}/{x}/{y}.png"
-        },
-        districts: [
-          {
-            key: "Oota",
-            display: "大田",
-            boundary: "data/Saitama/Chichibu/Oota/chichibuoota.geojson",
-            points:   "data/Saitama/Chichibu/Oota/soil_points.geojson"
-          }
-          // ここに他の地区を追加していく
-        ]
-      }
-      // 他の市区町村を追加
-    }
-  }
-  // 他の都道府県を追加
-};
-
-/* ==========================================================
-   地図とベース
-========================================================== */
-const map = L.map("map", { center: [36.055, 139.07], zoom: 13 });
-const osm = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-  { maxZoom: 19, opacity: 1 }).addTo(map);
-document.getElementById("baseOpacity").addEventListener("input", e =>
-  osm.setOpacity(Number(e.target.value))
-);
-// パネル内クリックで地図ドラッグを拾わない
-L.DomEvent.disableClickPropagation(document.getElementById('panel'));
-
-/* ==========================================================
-   マスク付きタイル（市域でクリップ & H/S/B 変換）
-========================================================== */
-let cityMaskGeo = null; // 選択中市のGeoJSON
-const MaskedTileLayer = L.TileLayer.extend({
-  initialize: function(url, options) {
-    L.TileLayer.prototype.initialize.call(this, url, options || {});
-    this._filter = 'none';
-  },
-  setFilter: function(h,s,b){
-    this._filter = `hue-rotate(${h}deg) saturate(${s}) brightness(${b})`;
-    this.redraw();
-  },
-  createTile: function(coords, done) {
-    const size = 256;
-    const tile = L.DomUtil.create('canvas', 'leaflet-tile');
-    tile.width = tile.height = size;
-    const ctx = tile.getContext('2d');
-
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.src = this.getTileUrl(coords);
-
-    img.onload = () => {
-      if (!cityMaskGeo) {
-        ctx.filter = this._filter;
-        ctx.drawImage(img, 0, 0);
-        return done(null, tile);
-      }
-      ctx.save();
-      ctx.beginPath();
-
-      const z = coords.z;
-      const tileOriginX = coords.x * size;
-      const tileOriginY = coords.y * size;
-
-      const geom = cityMaskGeo.features[0].geometry;
-      const polys = (geom.type === 'MultiPolygon') ? geom.coordinates : [geom.coordinates];
-
-      polys.forEach(polygon => {
-        polygon.forEach(ring => {
-          ring.forEach((pt, i) => {
-            const latlng = L.latLng(pt[1], pt[0]);
-            const p = map.project(latlng, z);
-            const cx = p.x - tileOriginX;
-            const cy = p.y - tileOriginY;
-            if (i === 0) ctx.moveTo(cx, cy); else ctx.lineTo(cx, cy);
-          });
-          ctx.closePath();
-        });
-      });
-
-      ctx.clip('nonzero');
-      ctx.filter = this._filter;
-      ctx.drawImage(img, 0, 0);
-      ctx.restore();
-      done(null, tile);
-    };
-
-    img.onerror = () => done(null, tile);
-    return tile;
-  }
-});
-
-/* タイルレイヤ生成（URLは後で差し替え） */
-const tileLayers = {
-  twi:    new MaskedTileLayer(""),
-  hand:   new MaskedTileLayer(""),
-  tikei:  new MaskedTileLayer(""),
-  keikan: new MaskedTileLayer(""),
-  suiden: new MaskedTileLayer("")
-};
-
-/* UI連携（チェックとH/S/B/Opacity） */
-const layerDefs = {
-  twi:    { chk:'twiToggle',    op:'twiOpacity',    h:'twiHue',    s:'twiSat',    b:'twiBri' },
-  hand:   { chk:'handToggle',   op:'handOpacity',   h:'handHue',   s:'handSat',   b:'handBri' },
-  tikei:  { chk:'tikeiToggle',  op:'tikeiOpacity',  h:'tikeiHue',  s:'tikeiSat',  b:'tikeiBri' },
-  keikan: { chk:'keikanToggle', op:'keikanOpacity', h:'keikanHue', s:'keikanSat', b:'keikanBri' },
-  suiden: { chk:'suidenToggle', op:'suidenOpacity', h:'suidenHue', s:'suidenSat', b:'suidenBri' }
-};
-Object.entries(layerDefs).forEach(([key, ids]) => {
-  const c = id => document.getElementById(id);
-  const lay = tileLayers[key];
-  const chk = c(ids.chk), op = c(ids.op), h = c(ids.h), s = c(ids.s), b = c(ids.b);
-
-  const applyAll = () => {
-    lay.setOpacity(Number(op.value));
-    lay.setFilter(Number(h.value), Number(s.value), Number(b.value));
-  };
-
-  chk.addEventListener('change', () => {
-    if (chk.checked) { lay.addTo(map); applyAll(); }
-    else map.removeLayer(lay);
-  });
-  [op,h,s,b].forEach(el => el.addEventListener('input', () => {
-    if (!map.hasLayer(lay)) return;
-    applyAll();
-  }));
-});
-
-/* ==========================================================
-   区境 & ポイント（地区ごと）
-========================================================== */
-const districtUI = document.getElementById('districtList');
-
-function ecColor(v) {
-  return v > 0.2 ? "#800026" :
-         v > 0.15 ? "#E31A1C" :
-         v > 0.10 ? "#FD8D3C" : "#FED976";
-}
-
-let pointMode = "ec";
-let monoColor = "#ffaa00";
-let pointSize = 8;
-
-document.querySelectorAll("input[name='ptMode']").forEach(r => {
-  r.addEventListener("change", e => {
-    pointMode = e.target.value;
-    Object.values(activeDistricts).forEach(d => updatePointsStyle(d.pointsLayer));
-  });
-});
-document.getElementById("pointColor").addEventListener("input", e => {
-  monoColor = e.target.value;
-  if (pointMode === 'mono') {
-    Object.values(activeDistricts).forEach(d => updatePointsStyle(d.pointsLayer));
-  }
-});
-document.getElementById("pointSize").addEventListener("input", e => {
-  pointSize = Number(e.target.value);
-  Object.values(activeDistricts).forEach(d => updatePointsStyle(d.pointsLayer, true));
-});
-
-function updatePointsStyle(layer, sizeOnly=false) {
-  if (!layer) return;
-  layer.eachLayer(m => {
-    const ec = m.feature?.properties?.EC;
-    const fill = (pointMode === "ec") ? ecColor(ec) : monoColor;
-    const style = sizeOnly ? { radius: pointSize } : { radius: pointSize, fillColor: fill };
-    m.setStyle && m.setStyle(style);
-  });
-}
-
-/* 選択中の地区レイヤ管理 */
-let activeDistricts = {}; // key -> { boundaryLayer, boundaryBounds, pointsLayer }
-
-/* UIエントリを1行作成 */
-function addDistrictRow(cityKey, dist) {
-  const row = document.createElement('div');
-  row.className = 'dist-row';
-
-  const label = document.createElement('div');
-  label.textContent = dist.display;
-
-  const boundaryToggle = document.createElement('input');
-  boundaryToggle.type = 'checkbox';
-  boundaryToggle.title = '区境を表示';
-  boundaryToggle.checked = true;
-
-  const fitBtn = document.createElement('button');
-  fitBtn.className = 'fit-btn';
-  fitBtn.textContent = '範囲へ';
-
-  const pointsToggle = document.createElement('input');
-  pointsToggle.type = 'checkbox';
-  pointsToggle.title = '土壌ポイント';
-  pointsToggle.checked = true;
-
-  // 背面で2行構成にする
-  const controls = document.createElement('div');
-  controls.style.gridColumn = '1 / -1';
-  controls.style.display = 'grid';
-  controls.style.gridTemplateColumns = 'auto auto 1fr';
-  controls.style.alignItems = 'center';
-  controls.style.gap = '8px';
-  controls.style.marginTop = '2px';
-
-  const bWrap = document.createElement('label'); bWrap.className='small';
-  bWrap.append(boundaryToggle, document.createTextNode(' 区境'));
-  const pWrap = document.createElement('label'); pWrap.className='small';
-  pWrap.append(pointsToggle, document.createTextNode(' ポイント'));
-
-  controls.append(bWrap, pWrap, fitBtn);
-
-  row.append(label);
-  row.append(document.createElement('div')); // dummy
-  row.append(document.createElement('div')); // dummy
-  row.append(controls);
-
-  districtUI.append(row);
-
-  /* レイヤ読み込み */
-  const state = { boundaryLayer:null, boundaryBounds:null, pointsLayer:null };
-  activeDistricts[dist.key] = state;
-
-  // 区境線（塗りなし）
-  fetch(dist.boundary)
-    .then(r => r.json())
-    .then(js => {
-      state.boundaryLayer = L.geoJSON(js, {
-        style: { color:"#ff0066", weight:3, fillOpacity:0 }
-      }).addTo(map);
-      state.boundaryBounds = state.boundaryLayer.getBounds();
-    })
-    .catch(e => console.warn("boundary 読み込み失敗:", dist.boundary, e));
-
-  // ポイント
-  fetch(dist.points, { cache: "no-store" })
-    .then(r => r.json())
-    .then(js => {
-      state.pointsLayer = L.geoJSON(js, {
-        pointToLayer: (f, latlng) => {
-          const col = (pointMode === "ec") ? ecColor(f.properties?.EC) : monoColor;
-          return L.circleMarker(latlng, {
-            radius: pointSize, fillColor: col, color: "#000", weight: 1, fillOpacity: 0.9
-          }).bindPopup(buildPointPopup(f.properties));
-        }
-      }).addTo(map);
-    })
-    .catch(e => console.warn("points 読み込み失敗:", dist.points, e));
-
-  /* イベント */
-  boundaryToggle.addEventListener('change', () => {
-    const lay = state.boundaryLayer; if (!lay) return;
-    if (boundaryToggle.checked) lay.addTo(map); else map.removeLayer(lay);
-  });
-  pointsToggle.addEventListener('change', () => {
-    const lay = state.pointsLayer; if (!lay) return;
-    if (pointsToggle.checked) lay.addTo(map); else map.removeLayer(lay);
-  });
-  fitBtn.addEventListener('click', () => {
-    const b = state.boundaryBounds;
-    if (b && b.isValid()) map.fitBounds(b.pad(0.1));
-  });
-}
-
-function buildPointPopup(p) {
-  // 日本語キーもそのまま表示
-  const rows = Object.entries(p || {}).map(([k,v]) =>
-    `<tr><th style="text-align:left;padding-right:8px;white-space:nowrap;">${k}</th><td>${v ?? ""}</td></tr>`
-  ).join("");
-  return `<table class="small">${rows}</table>`;
-}
-
-/* ==========================================================
-   タブ生成と選択ハンドラ
-========================================================== */
-const prefTabs = document.getElementById('prefTabs');
-const cityTabs = document.getElementById('cityTabs');
-
-let currentPref = null;
-let currentCity = null;
-
-/* タブ生成 */
-function renderPrefTabs() {
-  prefTabs.innerHTML = "";
-  Object.keys(CATALOG).forEach(prefKey => {
-    const pref = CATALOG[prefKey];
-    const btn = document.createElement('div');
-    btn.className = 'tab' + (prefKey===currentPref ? ' active' : '');
-    btn.textContent = pref.display;
-    btn.addEventListener('click', () => selectPref(prefKey));
-    prefTabs.append(btn);
-  });
-}
-function renderCityTabs() {
-  cityTabs.innerHTML = "";
-  if (!currentPref) return;
-  const cities = CATALOG[currentPref].cities;
-  Object.keys(cities).forEach(cityKey => {
-    const city = cities[cityKey];
-    const btn = document.createElement('div');
-    btn.className = 'tab' + (cityKey===currentCity ? ' active' : '');
-    btn.textContent = city.display;
-    btn.addEventListener('click', () => selectCity(cityKey));
-    cityTabs.append(btn);
-  });
-}
-
-/* 都道府県選択 */
-function selectPref(prefKey) {
-  currentPref = prefKey;
-  renderPrefTabs();
-  // 最初の市を選ぶ
-  const firstCity = Object.keys(CATALOG[prefKey].cities)[0];
-  selectCity(firstCity);
-}
-
-/* 市区町村選択：中心移動、マスク読込、タイルURL更新、地区UI再生成 */
-function selectCity(cityKey) {
-  currentCity = cityKey;
-  renderCityTabs();
-
-  const city = CATALOG[currentPref].cities[cityKey];
-  map.setView(city.center, city.zoom);
-
-  // マスク読み込み
-  cityMaskGeo = null;
-  fetch(city.cityMask).then(r => r.json()).then(geo => { cityMaskGeo = geo; })
-    .catch(e => console.warn("cityMask 読み込み失敗:", city.cityMask, e));
-
-  // タイルURL入れ替え
-  tileLayers.twi.setUrl(city.tiles.twi);
-  tileLayers.hand.setUrl(city.tiles.hand);
-  tileLayers.tikei.setUrl(city.tiles.tikei);
-  tileLayers.keikan.setUrl(city.tiles.keikan);
-  tileLayers.suiden.setUrl(city.tiles.suiden);
-
-  // 既存地区レイヤを掃除
-  Object.values(activeDistricts).forEach(d => {
-    if (d.boundaryLayer) map.removeLayer(d.boundaryLayer);
-    if (d.pointsLayer) map.removeLayer(d.pointsLayer);
-  });
-  activeDistricts = {};
-  districtUI.innerHTML = "";
-
-  // 地区UIを作る
-  city.districts.forEach(d => addDistrictRow(cityKey, d));
-}
-
-/* 初期化：埼玉→秩父 */
-selectPref("Saitama");
-</script>
-
+<script src="./assets/js/masked-tile.js"></script>
+<script src="./assets/js/app.js"></script>
 </body>
 </html>
