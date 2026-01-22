@@ -52,6 +52,7 @@ Object.entries(layerDefs).forEach(([key, ids]) => {
   chk.addEventListener('change', () => {
     if (chk.checked) { lay.addTo(map); applyAll(); }
     else map.removeLayer(lay);
+    refreshLegends();   // ← 追加
   });
   [op,h,s,b].forEach(el => el.addEventListener('input', () => {
     if (!map.hasLayer(lay)) return;
@@ -227,6 +228,7 @@ function selectPref(prefKey) {
   selectCity(firstCity);
 }
 
+
 function selectCity(cityKey) {
   currentCity = cityKey;
   renderCityTabs();
@@ -234,49 +236,58 @@ function selectCity(cityKey) {
   const city = CATALOG[currentPref].cities[cityKey];
   map.setView(city.center, city.zoom);
 
-  // 市域マスク
+  // ① UI無効化（マスク準備中はONしても描画させない）
+  setTilesUIEnabled(false);
+
+  // ② 市域マスクの読み込み → 全タイルに適用（適用時に redraw される）
   cityMaskGeo = null;
   fetch(city.cityMask, { cache: "no-store" })
     .then(r => r.json())
     .then(geo => {
       cityMaskGeo = geo;
-      // 全タイルレイヤにマスク適用
       Object.values(tileLayers).forEach(l => l.setMask(cityMaskGeo, map));
+
+      // ③ 各タイルURL差し替え
+      tileLayers.twi.setUrl(city.tiles.twi);
+      tileLayers.hand.setUrl(city.tiles.hand);
+      tileLayers.tikei.setUrl(city.tiles.tikei);
+      tileLayers.keikan.setUrl(city.tiles.keikan);
+      tileLayers.suiden.setUrl(city.tiles.suiden);
+
+      // ④ UI有効化
+      setTilesUIEnabled(true);
+
+      // ⑤ チェック状態に合わせて再表示＋凡例更新
+      Object.entries(layerDefs).forEach(([key, ids]) => {
+        const chk = document.getElementById(ids.chk);
+        const h = document.getElementById(ids.h);
+        const s = document.getElementById(ids.s);
+        const b = document.getElementById(ids.b);
+        const op = document.getElementById(ids.op);
+        const lay = tileLayers[key];
+
+        lay.setOpacity(Number(op.value));
+        lay.setFilter(Number(h.value), Number(s.value), Number(b.value));
+        if (chk.checked) lay.addTo(map); else map.removeLayer(lay);
+      });
+      refreshLegends();
     })
-    .catch(e => console.warn("cityMask 読み込み失敗:", city.cityMask, e));
+    .catch(e => {
+      console.warn("cityMask 読み込み失敗:", city.cityMask, e);
+      // 失敗時でもUIは戻す
+      setTilesUIEnabled(true);
+    });
 
-  // 各タイルURLを差し替え、チェックONなら即適用
-  tileLayers.twi.setUrl(city.tiles.twi);
-  tileLayers.hand.setUrl(city.tiles.hand);
-  tileLayers.tikei.setUrl(city.tiles.tikei);     // 03_Tikei 使用
-  tileLayers.keikan.setUrl(city.tiles.keikan);
-  tileLayers.suiden.setUrl(city.tiles.suiden);
-
-  // 既存の地区レイヤを掃除
+  // 地区レイヤを掃除してから再構築
   Object.values(activeDistricts).forEach(d => {
     if (d.boundaryLayer) map.removeLayer(d.boundaryLayer);
     if (d.pointsLayer) map.removeLayer(d.pointsLayer);
   });
   activeDistricts = {};
   districtList.innerHTML = "";
-
-  // 地区UIを作成
   city.districts.forEach(d => addDistrictRow(cityKey, d));
-
-  // チェック状態に合わせてレイヤを表示（URL差し替え直後のため）
-  Object.entries(layerDefs).forEach(([key, ids]) => {
-    const chk = document.getElementById(ids.chk);
-    const h = document.getElementById(ids.h);
-    const s = document.getElementById(ids.s);
-    const b = document.getElementById(ids.b);
-    const op = document.getElementById(ids.op);
-    const lay = tileLayers[key];
-
-    lay.setOpacity(Number(op.value));
-    lay.setFilter(Number(h.value), Number(s.value), Number(b.value));
-    if (chk.checked) lay.addTo(map); else map.removeLayer(lay);
-  });
 }
+
 
 /* ========= 初期化：catalog.json を読み込み、最初の県・市を選択 ========= */
 fetch("./data/catalog.json", { cache: "no-store" })
@@ -287,3 +298,64 @@ fetch("./data/catalog.json", { cache: "no-store" })
     selectPref(firstPref);
   })
   .catch(e => console.error("catalog.json の読み込みに失敗:", e));
+
+
+/* 追加：タイルの表示名（凡例キャプション用） */
+const tileKeyToLabel = {
+  twi:   "TWI（湿潤度）",
+  hand:  "HAND（鉛直距離）",
+  tikei: "地形・地質等から期待される雨水浸透機能",
+  keikan:"自然的景観",
+  suiden:"水田占有率"
+};
+
+/* 追加：凡例領域 */
+const legendsDiv = document.getElementById('legends');
+
+/* 追加：タイルURLから hanrei.png のURLを作る */
+function pathToLegend(url) {
+  // 期待形式: .../0xxxxx_xxxxx/{z}/{x}/{y}.png
+  const idx = url.indexOf("{z}");
+  if (idx !== -1) return url.slice(0, idx) + "hanrei.png";
+
+  // フォールバック（万一の時）
+  return url.replace(/\{z\}\/\{x\}\/\{y\}\.png.*$/, "hanrei.png")
+            .replace(/\/\d+\/\d+\/\d+\.png.*$/, "/hanrei.png");
+}
+
+/* 追加：現在ONのレイヤだけ凡例を並べる */
+function refreshLegends() {
+  legendsDiv.innerHTML = "";
+  Object.entries(layerDefs).forEach(([key, ids]) => {
+    const chk = document.getElementById(ids.chk);
+    if (!chk.checked) return;
+
+    const src = pathToLegend(tileLayers[key]._url || "");
+    const wrap = document.createElement('div');
+    wrap.className = 'legend-item';
+
+    const img = document.createElement('img');
+    img.src = src;
+    img.alt = tileKeyToLabel[key] + " 凡例";
+    img.loading = "lazy";
+    img.className = "legend-img";
+
+    const cap = document.createElement('div');
+    cap.className = "legend-cap";
+    cap.textContent = tileKeyToLabel[key];
+
+    wrap.append(img, cap);
+    legendsDiv.append(wrap);
+  });
+}
+
+
+/* 追加：マスク読込完了までUIを無効化（白っぽい初期描画を防止） */
+function setTilesUIEnabled(enabled) {
+  Object.values(layerDefs).forEach(({chk, op, h, s, b}) => {
+    [chk, op, h, s, b].map(id => document.getElementById(id))
+                      .forEach(el => el.disabled = !enabled);
+  });
+}
+``
+
