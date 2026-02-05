@@ -78,6 +78,7 @@ L.control.layers(
 
 /* パネルのプルダウンで確実に背景を切替 */
 const baseSelect = document.getElementById("baseSelect");
+
 function setBaseLayer(key) {
   map.removeLayer(baseOSM);
   map.removeLayer(baseGSIStd);
@@ -398,6 +399,7 @@ function addDistrictRow(cityKey, dist) {
   activeDistricts[dist.key] = state;
 
   // 区境（線）→ districtPane（最上：B）
+  // ★重要：interactive:false でクリックを奪わない（ポイントが反応する）
   fetch(dist.boundary, { cache: "no-store" })
     .then((r) => r.json())
     .then((js) => {
@@ -405,6 +407,8 @@ function addDistrictRow(cityKey, dist) {
 
       state.boundaryLayer = L.geoJSON(js, {
         pane: "districtPane",
+        interactive: false,          // ←これがポイント
+        bubblingMouseEvents: false,  // 保険
         style: { color: "#ff0066", weight: 3, fillOpacity: 0 }
       }).addTo(map);
 
@@ -444,14 +448,10 @@ function addDistrictRow(cityKey, dist) {
           marker.on("click", (ev) => {
             const oe = ev?.originalEvent;
             const modifier = oe && (oe.shiftKey || oe.ctrlKey || oe.metaKey);
-            if (modifier) {
-              // 地図側のクリック処理（ポップアップなど）を止めたい場合は stopPropagation
-              // L.DomEvent.stop(oe);
-              openDiagnosisInNewTab(f, dist.points);
-            }
+            if (modifier) openDiagnosisInNewTab(f, dist.points);
           });
 
-          // B：ダブルクリックで直接開く（ダブルクリックズーム抑止）
+          // B：ダブルクリックで直接開く（ズーム抑止）
           marker.on("dblclick", (ev) => {
             const oe = ev?.originalEvent;
             if (oe) L.DomEvent.stop(oe);
@@ -560,7 +560,6 @@ function selectCity(cityKey) {
 
       setTilesUIEnabled(true);
 
-      // チェック状態に応じて再描画
       Object.entries(layerDefs).forEach(([key, ids]) => {
         const chk = document.getElementById(ids.chk);
         const op = document.getElementById(ids.op);

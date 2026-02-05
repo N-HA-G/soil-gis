@@ -375,3 +375,8 @@ textarea { resize: vertical; }
 /* Leafletのコントロールを常に前面に */
 .leaflet-top, .leaflet-bottom { z-index: 3000; }
 .leaflet-control { z-index: 3001; }
+
+/* 区境線（districtPane）はクリックを通す（見た目だけ最上） */
+.leaflet-pane.districtPane-pane {
+  pointer-events: none;
+}
