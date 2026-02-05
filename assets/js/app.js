@@ -1,5 +1,15 @@
 /* =========================================================
-   0) パネル最小化（存在チェック付き）
+   0) エラー見える化（真っ黒になった時に原因が分かる）
+========================================================= */
+window.addEventListener("error", (e) => {
+  console.error("JS Error:", e.error || e.message);
+});
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("Promise Rejection:", e.reason);
+});
+
+/* =========================================================
+   1) パネル最小化（存在チェック付き）
 ========================================================= */
 (() => {
   const panel = document.getElementById("panel");
@@ -22,7 +32,15 @@
 })();
 
 /* =========================================================
-   1) 地図のベース
+   2) Leafletが読み込めてるか確認（黒画面対策）
+========================================================= */
+if (!window.L) {
+  alert("Leafletが読み込めていません。index.html の <link>/<script> を確認してください。");
+  throw new Error("Leaflet not loaded");
+}
+
+/* =========================================================
+   3) 地図のベース
 ========================================================= */
 const map = L.map("map", { center: [36.055, 139.07], zoom: 13 });
 
@@ -37,7 +55,7 @@ const panelEl = document.getElementById("panel");
 if (panelEl) L.DomEvent.disableClickPropagation(panelEl);
 
 /* =========================================================
-   2) 背景レイヤ（OSM / 地理院標準 / 地理院航空写真）
+   4) 背景レイヤ（OSM / 地理院標準 / 地理院航空写真）
 ========================================================= */
 const baseOSM = L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
   maxZoom: 19,
@@ -49,26 +67,15 @@ const baseGSIStd = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/std/{z}/{x}
   maxZoom: 18,
   pane: "basemapPane",
   attribution: "出典：国土地理院（地理院タイル）"
-}); // 標準地図タイル [1](https://soilsense.io/dashboard-en)[2](https://github.com/osuke0106/soil.map.dashboard)
+});
 
 const baseGSIAerial = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/seamlessphoto/{z}/{x}/{y}.jpg", {
   maxZoom: 18,
   pane: "basemapPane",
   attribution: "出典：国土地理院（地理院タイル）"
-}); // 航空写真タイル [3](https://karttur.github.io/soil-spectro/libspectrodata/spectrodata-OSSL4ML03-plot/)[2](https://github.com/osuke0106/soil.map.dashboard)
+});
 
-/* Leafletの背景切替UI（見えていればこれでも切替可） */
-const layerCtrl = L.control.layers(
-  {
-    "OSM": baseOSM,
-    "地理院 標準地図": baseGSIStd,
-    "地理院 航空写真": baseGSIAerial
-  },
-  null,
-  { collapsed: true, position: "bottomright" }
-).addTo(map);
-
-/* パネルのプルダウンで背景を確実に切替 */
+/* 背景はパネルで確実に切替 */
 const baseSelect = document.getElementById("baseSelect");
 const baseOpacityEl = document.getElementById("baseOpacity");
 
@@ -88,9 +95,7 @@ const savedBaseKey = localStorage.getItem("baseKey") || "gsiStd";
 setBaseLayer(savedBaseKey);
 if (baseSelect) baseSelect.value = savedBaseKey;
 
-if (baseSelect) {
-  baseSelect.addEventListener("change", (e) => setBaseLayer(e.target.value));
-}
+if (baseSelect) baseSelect.addEventListener("change", (e) => setBaseLayer(e.target.value));
 
 if (baseOpacityEl) {
   baseOpacityEl.addEventListener("input", (e) => {
@@ -102,7 +107,7 @@ if (baseOpacityEl) {
 }
 
 /* =========================================================
-   3) UI要素
+   5) UI要素
 ========================================================= */
 const prefTabs = document.getElementById("prefTabs");
 const cityTabs = document.getElementById("cityTabs");
@@ -110,7 +115,7 @@ const districtList = document.getElementById("districtList");
 const legendsDiv = document.getElementById("legends");
 
 /* =========================================================
-   4) 凡例
+   6) 凡例
 ========================================================= */
 const tileKeyToLabel = {
   twi: "TWI（湿潤度）",
@@ -155,7 +160,7 @@ function refreshLegends() {
 }
 
 /* =========================================================
-   5) カタログ（pref/city）と市域マスク
+   7) カタログ（pref/city）と市域マスク
 ========================================================= */
 let CATALOG = null;
 let currentPref = null;
@@ -163,8 +168,13 @@ let currentCity = null;
 let cityMaskGeo = null;
 
 /* =========================================================
-   6) マスク付きタイルレイヤ（ECODRR）
+   8) マスク付きタイルレイヤ（ECODRR）
 ========================================================= */
+if (!window.MaskedTileLayer) {
+  alert("MaskedTileLayerが見つかりません。assets/js/masked-tile.js の読み込みを確認してください。");
+  throw new Error("MaskedTileLayer not loaded");
+}
+
 const tileLayers = {
   twi:    new MaskedTileLayer("", { pane: "ecodrrPane" }),
   hand:   new MaskedTileLayer("", { pane: "ecodrrPane" }),
@@ -173,7 +183,6 @@ const tileLayers = {
   suiden: new MaskedTileLayer("", { pane: "ecodrrPane" })
 };
 
-/* タイルUI */
 const layerDefs = {
   twi:    { chk: "twiToggle",    op: "twiOpacity",    h: "twiHue",    s: "twiSat",    b: "twiBri" },
   hand:   { chk: "handToggle",   op: "handOpacity",   h: "handHue",   s: "handSat",   b: "handBri" },
@@ -209,18 +218,16 @@ Object.entries(layerDefs).forEach(([key, ids]) => {
     refreshLegends();
   });
 
-  [op, h, s, b].forEach(el => {
-    el.addEventListener("input", () => {
-      if (!map.hasLayer(lay)) return;
-      applyAll();
-    });
-  });
+  [op, h, s, b].forEach(el => el.addEventListener("input", () => {
+    if (!map.hasLayer(lay)) return;
+    applyAll();
+  }));
 });
 
 /* =========================================================
-   7) 地区（区境・ポイント）
+   9) 地区（区境・ポイント）
 ========================================================= */
-let activeDistricts = {}; // key -> { boundaryLayer, boundaryBounds, pointsLayer }
+let activeDistricts = {};
 
 function ecColor(v) {
   return v > 0.2 ? "#800026" :
@@ -240,22 +247,16 @@ document.querySelectorAll("input[name='ptMode']").forEach(r => {
 });
 
 const pointColorEl = document.getElementById("pointColor");
-if (pointColorEl) {
-  pointColorEl.addEventListener("input", (e) => {
-    monoColor = e.target.value;
-    if (pointMode === "mono") {
-      Object.values(activeDistricts).forEach(d => updatePointsStyle(d.pointsLayer));
-    }
-  });
-}
+if (pointColorEl) pointColorEl.addEventListener("input", (e) => {
+  monoColor = e.target.value;
+  if (pointMode === "mono") Object.values(activeDistricts).forEach(d => updatePointsStyle(d.pointsLayer));
+});
 
 const pointSizeEl = document.getElementById("pointSize");
-if (pointSizeEl) {
-  pointSizeEl.addEventListener("input", (e) => {
-    pointSize = Number(e.target.value);
-    Object.values(activeDistricts).forEach(d => updatePointsStyle(d.pointsLayer, true));
-  });
-}
+if (pointSizeEl) pointSizeEl.addEventListener("input", (e) => {
+  pointSize = Number(e.target.value);
+  Object.values(activeDistricts).forEach(d => updatePointsStyle(d.pointsLayer, true));
+});
 
 function updatePointsStyle(layer, sizeOnly=false) {
   if (!layer) return;
@@ -267,7 +268,6 @@ function updatePointsStyle(layer, sizeOnly=false) {
   });
 }
 
-/* soil.html に飛ぶ（src=soil_pointsのパスを渡す） */
 function buildDiagnosisUrl(id, pointsSrc) {
   const base = "soil.html";
   const q1 = `id=${encodeURIComponent(String(id))}`;
@@ -280,33 +280,21 @@ function buildDiagnosisPopupHtml(feature, pointsSrc) {
   const id = props.field_id ?? props.soil_id ?? props.id;
   const place = props["場所名"] ?? "";
   const ec = props.EC ?? "";
-
-  if (!id) {
-    return `
-      <div style="min-width:240px; line-height:1.6;">
-        <b>IDが見つかりません</b><br>
-        soil_points.geojson の properties に <code>field_id</code> を入れてください。
-      </div>
-    `;
-  }
+  if (!id) return `<div><b>IDが見つかりません</b></div>`;
 
   const url = buildDiagnosisUrl(id, pointsSrc);
-
   return `
     <div style="min-width:240px; line-height:1.6;">
       <div><b>${id}</b></div>
       <div style="font-size:12px; color:#555;">${place}</div>
       <div style="margin-top:6px;">EC: <b>${ec}</b></div>
-
       <div style="margin-top:10px;">
         <a href="${url}" target="_blank" rel="noopener"
            style="display:inline-block; padding:8px 12px; background:#0a66c2; color:#fff; border-radius:6px; text-decoration:none;">
           診断を見る
         </a>
       </div>
-      <div style="margin-top:6px; font-size:11px; color:#666;">（新しいタブで開きます）</div>
-    </div>
-  `;
+    </div>`;
 }
 
 function addDistrictRow(cityKey, dist) {
@@ -317,7 +305,6 @@ function addDistrictRow(cityKey, dist) {
 
   const label = document.createElement("div");
   label.textContent = dist.display;
-
   row.append(label);
   row.append(document.createElement("div"));
   row.append(document.createElement("div"));
@@ -331,12 +318,10 @@ function addDistrictRow(cityKey, dist) {
   controls.style.marginTop = "2px";
 
   const boundaryToggle = document.createElement("input");
-  boundaryToggle.type = "checkbox";
-  boundaryToggle.checked = true;
+  boundaryToggle.type = "checkbox"; boundaryToggle.checked = true;
 
   const pointsToggle = document.createElement("input");
-  pointsToggle.type = "checkbox";
-  pointsToggle.checked = true;
+  pointsToggle.type = "checkbox"; pointsToggle.checked = true;
 
   const bWrap = document.createElement("label");
   bWrap.className = "small";
@@ -357,20 +342,14 @@ function addDistrictRow(cityKey, dist) {
   const state = { boundaryLayer: null, boundaryBounds: null, pointsLayer: null };
   activeDistricts[dist.key] = state;
 
-  // 区境（線）→ districtPane に固定（必ず最上）
   fetch(dist.boundary, { cache: "no-store" })
     .then(r => r.json())
     .then(js => {
       if (state.boundaryLayer) map.removeLayer(state.boundaryLayer);
       state.boundaryLayer = L.geoJSON(js, {
         pane: "districtPane",
-        style: { color: "#ff0066", weight: 3, fillOpacity: 0 }
-      }).addTo(map);
-      state.boundaryBounds = state.boundaryLayer.getBounds();
-    })
-    .catch(e => console.warn("boundary 読み込み失敗:", dist.boundary, e));
+        style: { color: "#ffdist.boundary, e));
 
-  // ポイント → pointsPane に固定（線より上）
   fetch(dist.points, { cache: "no-store" })
     .then(r => r.json())
     .then(js => {
@@ -379,70 +358,44 @@ function addDistrictRow(cityKey, dist) {
       state.pointsLayer = L.geoJSON(js, {
         pointToLayer: (f, latlng) => {
           const col = (pointMode === "ec") ? ecColor(f.properties?.EC) : monoColor;
-
           const marker = L.circleMarker(latlng, {
             pane: "pointsPane",
-            radius: pointSize,
-            fillColor: col,
-            color: "#000",
-            weight: 1,
-            fillOpacity: 0.9
+            radius: pointSize, fillColor: col, color: "#000", weight: 1, fillOpacity: 0.9
           });
-
           marker.bindPopup(buildDiagnosisPopupHtml(f, dist.points));
-
-          const fid = f.properties?.field_id ?? "";
-          const place = f.properties?.["場所名"] ?? "";
-          marker.bindTooltip(`${fid} ${place}`.trim(), { direction: "top" });
-
-          marker.on("dblclick", () => {
-            const id = f.properties?.field_id ?? f.properties?.soil_id ?? f.properties?.id;
-            if (!id) return;
-            window.open(buildDiagnosisUrl(id, dist.points), "_blank", "noopener");
-          });
-
           return marker;
         }
       });
-
       if (pointsToggle.checked) state.pointsLayer.addTo(map);
     })
     .catch(e => console.warn("points 読み込み失敗:", dist.points, e));
 
   boundaryToggle.addEventListener("change", () => {
-    const lay = state.boundaryLayer;
-    if (!lay) return;
-    if (boundaryToggle.checked) lay.addTo(map);
-    else map.removeLayer(lay);
+    if (!state.boundaryLayer) return;
+    boundaryToggle.checked ? state.boundaryLayer.addTo(map) : map.removeLayer(state.boundaryLayer);
   });
 
   pointsToggle.addEventListener("change", () => {
-    const lay = state.pointsLayer;
-    if (!lay) return;
-    if (pointsToggle.checked) lay.addTo(map);
-    else map.removeLayer(lay);
+    if (!state.pointsLayer) return;
+    pointsToggle.checked ? state.pointsLayer.addTo(map) : map.removeLayer(state.pointsLayer);
   });
 
   fitBtn.addEventListener("click", () => {
-    const b = state.boundaryBounds;
-    if (b && b.isValid()) map.fitBounds(b.pad(0.1));
+    if (state.boundaryBounds && state.boundaryBounds.isValid()) map.fitBounds(state.boundaryBounds.pad(0.1));
   });
 }
 
 /* =========================================================
-   8) タブ描画（pref / city）
+   10) タブ（pref/city）
 ========================================================= */
 function renderPrefTabs() {
   if (!prefTabs || !CATALOG) return;
   prefTabs.innerHTML = "";
-
   Object.keys(CATALOG).forEach(prefKey => {
     const pref = CATALOG[prefKey];
-
     const btn = document.createElement("div");
     btn.className = "tab" + (prefKey === currentPref ? " active" : "");
     btn.textContent = pref.display ?? prefKey;
-
     btn.addEventListener("click", () => selectPref(prefKey));
     prefTabs.append(btn);
   });
@@ -451,27 +404,20 @@ function renderPrefTabs() {
 function renderCityTabs() {
   if (!cityTabs || !CATALOG || !currentPref) return;
   cityTabs.innerHTML = "";
-
   const cities = CATALOG[currentPref].cities || {};
   Object.keys(cities).forEach(cityKey => {
     const city = cities[cityKey];
-
     const btn = document.createElement("div");
     btn.className = "tab" + (cityKey === currentCity ? " active" : "");
     btn.textContent = city.display ?? cityKey;
-
     btn.addEventListener("click", () => selectCity(cityKey));
     cityTabs.append(btn);
   });
 }
 
-/* =========================================================
-   9) 選択ハンドラ（pref / city）
-========================================================= */
 function selectPref(prefKey) {
   currentPref = prefKey;
   renderPrefTabs();
-
   const firstCity = Object.keys(CATALOG[prefKey].cities || {})[0];
   if (firstCity) selectCity(firstCity);
 }
@@ -484,14 +430,12 @@ function selectCity(cityKey) {
   if (!city) return;
 
   map.setView(city.center, city.zoom);
-
   setTilesUIEnabled(false);
 
   fetch(city.cityMask, { cache: "no-store" })
     .then(r => r.json())
     .then(geo => {
       cityMaskGeo = geo;
-
       Object.values(tileLayers).forEach(l => l.setMask(cityMaskGeo, map));
 
       tileLayers.twi.setUrl(city.tiles.twi);
@@ -501,24 +445,6 @@ function selectCity(cityKey) {
       tileLayers.suiden.setUrl(city.tiles.suiden);
 
       setTilesUIEnabled(true);
-
-      Object.entries(layerDefs).forEach(([key, ids]) => {
-        const chk = document.getElementById(ids.chk);
-        const op  = document.getElementById(ids.op);
-        const h   = document.getElementById(ids.h);
-        const s   = document.getElementById(ids.s);
-        const b   = document.getElementById(ids.b);
-        const lay = tileLayers[key];
-
-        if (!chk || !op || !h || !s || !b) return;
-
-        lay.setOpacity(Number(op.value));
-        lay.setFilter(Number(h.value), Number(s.value), Number(b.value));
-
-        if (chk.checked) lay.addTo(map);
-        else map.removeLayer(lay);
-      });
-
       refreshLegends();
     })
     .catch(e => {
@@ -526,19 +452,17 @@ function selectCity(cityKey) {
       setTilesUIEnabled(true);
     });
 
-  // 地区レイヤを掃除して再構築
   Object.values(activeDistricts).forEach(d => {
     if (d.boundaryLayer) map.removeLayer(d.boundaryLayer);
     if (d.pointsLayer) map.removeLayer(d.pointsLayer);
   });
   activeDistricts = {};
   if (districtList) districtList.innerHTML = "";
-
   (city.districts || []).forEach(d => addDistrictRow(cityKey, d));
 }
 
 /* =========================================================
-   10) 初期化（catalog.json）
+   11) 初期化（catalog.json）
 ========================================================= */
 fetch("./data/catalog.json", { cache: "no-store" })
   .then(r => r.json())
@@ -549,4 +473,3 @@ fetch("./data/catalog.json", { cache: "no-store" })
     selectPref(firstPref);
   })
   .catch(e => console.error("catalog.json の読み込みに失敗:", e));
-``
