@@ -1,4 +1,5 @@
-<!DOCTYPE html>
+
+!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
@@ -6,68 +7,70 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
   <!-- Leaflet -->
-  https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
-  https://unpkg.com/leaflet@1.9.4/dist/leaflet.js</script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  ./assets/css/style.css
+  <!-- App CSS -->
+  <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
 
-<div id="map"></div>
+  <div id="map"></div>
 
-<div class="panel" id="panel">
-  <div class="panel-header">
-    <div class="panel-title">土壌調査（ECODRR）Web GIS</div>
-    <button id="panelToggle" class="panel-toggle" type="button"
-            aria-expanded="true" aria-controls="panelBody">－</button>
-  </div>
-
-  <div id="panelBody" class="panel-body">
-
-    <div class="group">
-      <b>都道府県</b>
-      <div id="prefTabs" class="tabs"></div>
+  <div class="panel" id="panel">
+    <div class="panel-header">
+      <div class="panel-title">土壌調査（ECODRR）Web GIS</div>
+      <button id="panelToggle" class="panel-toggle" type="button"
+              aria-expanded="true" aria-controls="panelBody">－</button>
     </div>
 
-    <div class="group">
-      <b>市区町村</b>
-      <div id="cityTabs" class="tabs subtabs"></div>
-    </div>
+    <div id="panelBody" class="panel-body">
 
-    <div class="group">
-      <b>背景（ベースマップ）</b>
-      <div class="row">
-        <label>種類</label>
-        <select id="baseSelect" style="flex:1;">
-          <option value="gsiStd">地理院 標準地図</option>
-          <option value="gsiAir">地理院 航空写真</option>
-          <option value="osm">OSM</option>
-        </select>
+      <div class="group">
+        <b>都道府県</b>
+        <div id="prefTabs" class="tabs"></div>
       </div>
-      <div class="row">
-        <label>透明度</label>
-        <input id="baseOpacity" type="range" min="0" max="1" step="0.05" value="1">
+
+      <div class="group">
+        <b>市区町村</b>
+        <div id="cityTabs" class="tabs subtabs"></div>
       </div>
-      <div class="small">※背景はここで確実に切替できます</div>
-    </div>
 
-    <!-- 以降：タイルと地区（あなたのままでOK） -->
-    <!-- …（省略せずにそのまま入れてOK）… -->
+      <div class="group">
+        <b>背景（ベースマップ）</b>
+        <div class="row">
+          <label>種類</label>
+          <select id="baseSelect" style="flex:1;">
+            <option value="gsiStd">地理院 標準地図</option>
+            <option value="gsiAir">地理院 航空写真</option>
+            <option value="osm">OSM</option>
+          </select>
+        </div>
+        <div class="row">
+          <label>透明度</label>
+          <input id="baseOpacity" type="range" min="0" max="1" step="0.05" value="1">
+        </div>
+        <div class="small">※背景はここで確実に切替できます</div>
+      </div>
 
-    <div class="group">
-      <b>凡例</b>
-      <div id="legends"></div>
-    </div>
+      <!-- ▼ここに「タイルレイヤ」全部と「地区UI」全部を入れる（省略しない） -->
+      <!-- 例：twiToggle〜suidenBri、legends、districtList、pointColor、pointSize、ptMode等 -->
 
-    <div class="group">
-      <b>地区（区境・ポイント）</b>
-      <div id="districtList"></div>
-    </div>
+      <div class="group">
+        <b>凡例</b>
+        <div id="legends"></div>
+      </div>
 
-  </div>
-</div>
+      <div class="group">
+        <b>地区（区境・ポイント）</b>
+        <div id="districtList"></div>
+      </div>
 
-./assets/js/masked-tile.js</script>
-./assets/js/app.js</script>
+    </div><!-- /panelBody -->
+  </div><!-- /panel -->
+
+  <!-- App JS（順番重要：masked-tile.js → app.js） -->
+  <script src="./assets/js/masked-tile.js"></script>
+  <script src="./assets/js/app.js"></script>
 </body>
 </html>
