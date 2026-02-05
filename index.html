@@ -5,11 +5,11 @@
   <title>土壌調査（ECODRR）Web GIS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Leaflet（※必ずこの形） -->
-  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <!-- Leaflet -->
+  https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
+  https://unpkg.com/leaflet@1.9.4/dist/leaflet.js</script>
 
-  <link rel="stylesheet" href="./assets/css/style.css">
+  ./assets/css/style.css
 </head>
 <body>
 
@@ -36,7 +36,6 @@
 
     <div class="group">
       <b>背景（ベースマップ）</b>
-
       <div class="row">
         <label>種類</label>
         <select id="baseSelect" style="flex:1;">
@@ -45,75 +44,30 @@
           <option value="osm">OSM</option>
         </select>
       </div>
-
       <div class="row">
         <label>透明度</label>
         <input id="baseOpacity" type="range" min="0" max="1" step="0.05" value="1">
       </div>
-
       <div class="small">※背景はここで確実に切替できます</div>
     </div>
 
+    <!-- 以降：タイルと地区（あなたのままでOK） -->
+    <!-- …（省略せずにそのまま入れてOK）… -->
+
     <div class="group">
-      <b>タイルレイヤ（市域マスク適用）</b>
-
-      <div class="row"><input type="checkbox" id="twiToggle"><label for="twiToggle">TWI（湿潤度）</label></div>
-      <div class="row"><label class="small">透明度</label><input id="twiOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
-      <div class="row"><label class="small">Hue</label><input id="twiHue" type="range" min="0" max="360" value="0"></div>
-      <div class="row"><label class="small">Sat</label><input id="twiSat" type="range" min="0" max="4" step="0.1" value="1"></div>
-      <div class="row"><label class="small">Bri</label><input id="twiBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
-
-      <div class="row"><input type="checkbox" id="handToggle"><label for="handToggle">HAND（鉛直距離）</label></div>
-      <div class="row"><label class="small">透明度</label><input id="handOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
-      <div class="row"><label class="small">Hue</label><input id="handHue" type="range" min="0" max="360" value="0"></div>
-      <div class="row"><label class="small">Sat</label><input id="handSat" type="range" min="0" max="4" step="0.1" value="1"></div>
-      <div class="row"><label class="small">Bri</label><input id="handBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
-
-      <div class="row"><input type="checkbox" id="tikeiToggle"><label for="tikeiToggle">地形・地質等から期待される雨水浸透機能</label></div>
-      <div class="row"><label class="small">透明度</label><input id="tikeiOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
-      <div class="row"><label class="small">Hue</label><input id="tikeiHue" type="range" min="0" max="360" value="0"></div>
-      <div class="row"><label class="small">Sat</label><input id="tikeiSat" type="range" min="0" max="4" step="0.1" value="1"></div>
-      <div class="row"><label class="small">Bri</label><input id="tikeiBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
-
-      <div class="row"><input type="checkbox" id="keikanToggle"><label for="keikanToggle">自然的景観</label></div>
-      <div class="row"><label class="small">透明度</label><input id="keikanOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
-      <div class="row"><label class="small">Hue</label><input id="keikanHue" type="range" min="0" max="360" value="0"></div>
-      <div class="row"><label class="small">Sat</label><input id="keikanSat" type="range" min="0" max="4" step="0.1" value="1"></div>
-      <div class="row"><label class="small">Bri</label><input id="keikanBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
-
-      <div class="row"><input type="checkbox" id="suidenToggle"><label for="suidenToggle">水田占有率</label></div>
-      <div class="row"><label class="small">透明度</label><input id="suidenOpacity" type="range" min="0" max="1" step="0.05" value="0.8"></div>
-      <div class="row"><label class="small">Hue</label><input id="suidenHue" type="range" min="0" max="360" value="0"></div>
-      <div class="row"><label class="small">Sat</label><input id="suidenSat" type="range" min="0" max="4" step="0.1" value="1"></div>
-      <div class="row"><label class="small">Bri</label><input id="suidenBri" type="range" min="0.3" max="2" step="0.1" value="1"></div>
-
-      <div class="group">
-        <b>凡例</b>
-        <div id="legends"></div>
-      </div>
+      <b>凡例</b>
+      <div id="legends"></div>
     </div>
 
     <div class="group">
       <b>地区（区境・ポイント）</b>
       <div id="districtList"></div>
-
-      <div class="row small" style="margin-top:8px;">
-        <label>ポイント色</label>
-        <input id="pointColor" type="color" value="#ffaa00">
-        <label style="width:auto;">サイズ</label>
-        <input id="pointSize" type="range" min="4" max="14" step="1" value="8" style="flex:1;">
-      </div>
-
-      <div class="row small">
-        <label style="width:auto;"><input type="radio" name="ptMode" value="ec" checked> ECスケール</label>
-        <label style="width:auto;"><input type="radio" name="ptMode" value="mono"> 単色</label>
-      </div>
     </div>
 
   </div>
 </div>
 
-<script src="./assets/js/masked-tile.js"></script>
-<script src="./assets/js/app.js"></script>
+./assets/js/masked-tile.js</script>
+./assets/js/app.js</script>
 </body>
 </html>
