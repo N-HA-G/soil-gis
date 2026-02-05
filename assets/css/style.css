@@ -38,3 +38,111 @@ html, body, #map { height: 100%; margin: 0; padding: 0; background: #000; }
 .legend-item { border: 1px solid #eee; border-radius: 6px; padding: 6px; background: #fff; }
 .legend-img { max-width: 100%; height: auto; display: block; }
 .legend-cap { font-size: 12px; color: #555; margin-top: 4px; }
+/* ========= ダッシュボード用スタイル ========= */
+.dashboard-overlay {
+  position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+  background: rgba(0,0,0,0.8); z-index: 9999; /* 地図より上に */
+  overflow-y: auto; padding: 20px; box-sizing: border-box;
+}
+.dashboard-content {
+  background: #f4f7f6; max-width: 800px; margin: 0 auto;
+  border-radius: 12px; padding: 20px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+}
+.dashboard-header {
+  display: flex; justify-content: space-between; align-items: center;
+  margin-bottom: 20px; border-bottom: 2px solid #ddd; padding-bottom: 10px;
+}
+.dashboard-header h2 { margin: 0; color: #333; }
+.close-btn {
+  background: #ff4757; color: white; border: none; padding: 10px 20px;
+  border-radius: 6px; cursor: pointer; font-weight: bold;
+}
+.close-btn:hover { background: #ff6b81; }
+
+.dashboard-grid {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 15px;
+}
+@media (max-width: 600px) { .dashboard-grid { grid-template-columns: 1fr; } }
+
+.card {
+  background: white; padding: 15px; border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+.card.full-width { grid-column: 1 / -1; }
+.card h3 { margin-top: 0; border-left: 4px solid #0a66c2; padding-left: 8px; font-size: 16px; }
+
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 6px; border-bottom: 1px solid #eee; text-align: left; }
+th { color: #666; font-weight: normal; width: 40%; }
+
+.stats-row { display: flex; justify-content: space-around; text-align: center; margin-bottom: 10px; }
+.stat-item label { display: block; font-size: 11px; color: #888; }
+.stat-item span { font-size: 18px; font-weight: bold; color: #333; }
+.text-block { margin-top: 10px; }
+.text-block label { font-weight: bold; display: block; margin-bottom: 4px; color: #0a66c2; }
+.text-block div { background: #f9f9f9; padding: 8px; border-radius: 4px; min-height: 40px; }
+
+/* 編集画面用の追加スタイル */
+.edit-btn {
+  background: #f39c12; color: white; border: none; padding: 10px 20px;
+  border-radius: 6px; cursor: pointer; font-weight: bold;
+}
+.edit-btn:hover { background: #e67e22; }
+
+input[type="text"], input[type="number"], textarea {
+  border: 1px solid #ccc; padding: 6px; border-radius: 4px; box-sizing: border-box;
+}
+textarea { resize: vertical; }
+
+/* style.css の最後に追記 */
+.row-input { margin-bottom: 6px; display: flex; align-items: center; justify-content: space-between; }
+.row-input label { font-size: 13px; color: #555; width: 80px; }
+.row-input input { flex: 1; }
+
+/* ========= ゲージ（メーター）用のスタイル ========= */
+.gauge-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr); /* 3列表示 */
+  gap: 10px;
+}
+.gauge-item {
+  text-align: center;
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 5px;
+}
+.gauge-chart svg {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+/* ゲージの背景線（グレー） */
+.gauge-bg {
+  fill: none;
+  stroke: #e0e0e0;
+  stroke-width: 10;
+  stroke-linecap: round;
+}
+/* ゲージの値（色付き） */
+.gauge-fill {
+  fill: none;
+  stroke: #0a66c2; /* 基本色（青） */
+  stroke-width: 10;
+  stroke-linecap: round;
+  stroke-dasharray: 0, 1000; /* 初期値0 */
+  transition: stroke-dasharray 1s ease-out, stroke 0.3s;
+}
+/* 中央の数値 */
+.gauge-val {
+  font-size: 20px;
+  font-weight: bold;
+  fill: #333;
+  text-anchor: middle;
+}
+/* 下のラベル */
+.gauge-label {
+  font-size: 10px;
+  fill: #888;
+  text-anchor: middle;
+}
