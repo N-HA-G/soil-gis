@@ -201,9 +201,29 @@ function addDistrictRow(cityKey, dist) {
       state.pointsLayer = L.geoJSON(js, {
         pointToLayer: (f, latlng) => {
           const col = (pointMode === "ec") ? ecColor(f.properties?.EC) : monoColor;
-          return L.circleMarker(latlng, {
-            radius: pointSize, fillColor: col, color: "#000", weight: 1, fillOpacity: 0.9
-          }).bindPopup(buildPointPopup(f.properties));
+const marker = L.circleMarker(latlng, {
+  radius: pointSize,
+  fillColor: col,
+  color: "#000",
+  weight: 1,
+  fillOpacity: 0.9
+});
+
+// field_id を id として使う（なければ soil_id / id を探す）
+const id = f.properties?.field_id ?? f.properties?.soil_id ?? f.properties?.id;
+const url = `./soil_result.html?id=${encodeURIComponent(id)}`;
+
+// クリックで診断ページへ（Ctrl/⌘クリックは新タブ）
+marker.on("click", (ev) => {
+  const oe = ev?.originalEvent;
+  if (oe && (oe.ctrlKey || oe.metaKey)) window.open(url, "_blank");
+  else window.location.href = url;
+});
+
+// ついでにホバーで軽い情報だけ出す（不要なら削除OK）
+marker.bindTooltip(`${f.properties?.field_id ?? ""} ${f.properties?.場所名 ?? ""}`, { direction: "top" });
+
+return marker;
         }
       }).addTo(map);
     })
