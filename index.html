@@ -22,7 +22,6 @@
             aria-expanded="true" aria-controls="panelBody">－</button>
   </div>
 
-  <!-- ★ここが中身（最小化対象） -->
   <div id="panelBody" class="panel-body">
 
     <!-- 都道府県タブ -->
@@ -37,14 +36,25 @@
       <div id="cityTabs" class="tabs subtabs"></div>
     </div>
 
-    <!-- 背景 -->
+    <!-- 背景（ベースマップ） -->
     <div class="group">
       <b>背景（ベースマップ）</b>
+
+      <div class="row">
+        <label>種類</label>
+        <select id="baseSelect" style="flex:1;">
+          <option value="gsiStd">地理院 標準地図</option>
+          <option value="gsiAir">地理院 航空写真</option>
+          <option value="osm">OSM</option>
+        </select>
+      </div>
+
       <div class="row">
         <label>透明度</label>
         <input id="baseOpacity" type="range" min="0" max="1" step="0.05" value="1">
       </div>
-      <div class="small">※地理院標準 / 地理院航空写真 / OSM を切り替え可能</div>
+
+      <div class="small">※パネル内のプルダウンで確実に背景を切り替えられます</div>
     </div>
 
     <!-- タイルレイヤ（市域マスク適用） -->

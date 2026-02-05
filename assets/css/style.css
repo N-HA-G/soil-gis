@@ -357,3 +357,17 @@ textarea { resize: vertical; }
 .panel.collapsed .panel-body {
   display: none;
 }
+
+/* Leafletコントロールをパネルより前に出す */
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 2000;
+}
+
+.leaflet-control {
+  z-index: 2001;
+}
+
+.leaflet-control-layers {
+  z-index: 2002;
+}
