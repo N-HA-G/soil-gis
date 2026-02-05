@@ -65,7 +65,7 @@ const baseGSIAerial = L.tileLayer("https://cyberjapandata.gsi.go.jp/xyz/seamless
   attribution: "出典：国土地理院（地理院タイル）"
 });
 
-/* Leafletの背景切替UI（見えていればここでも切替可） */
+/* Leafletの背景切替UI（任意） */
 L.control.layers(
   {
     "OSM": baseOSM,
@@ -78,7 +78,6 @@ L.control.layers(
 
 /* パネルのプルダウンで確実に背景を切替 */
 const baseSelect = document.getElementById("baseSelect");
-
 function setBaseLayer(key) {
   map.removeLayer(baseOSM);
   map.removeLayer(baseGSIStd);
@@ -174,7 +173,6 @@ let cityMaskGeo = null;
 
 /* =========================================================
    5) マスク付きタイルレイヤ（ECODRR）
-   ★ pane: ecodrrPane を指定
 ========================================================= */
 const tileLayers = {
   twi:    new MaskedTileLayer("", { pane: "ecodrrPane" }),
@@ -203,8 +201,10 @@ function setTilesUIEnabled(enabled) {
   });
 }
 
+let activeDistricts = {}; // key -> { boundaryLayer, boundaryBounds, pointsLayer }
+
 function bringDistrictToFront() {
-  // B仕様：区境線を最上に戻す
+  // B仕様：区境線を必ず最上に戻す
   Object.values(activeDistricts).forEach((d) => {
     if (d.boundaryLayer && d.boundaryLayer.bringToFront) d.boundaryLayer.bringToFront();
   });
@@ -230,13 +230,12 @@ Object.entries(layerDefs).forEach(([key, ids]) => {
       lay.addTo(map);
       applyAll();
 
-      // 保険：タイル順が乱れても ecodrr を前に
+      // 保険：ECODRRタイルを前に
       if (lay.bringToFront) lay.bringToFront();
     } else {
       map.removeLayer(lay);
     }
 
-    // 最後に区境線を必ず最上へ
     bringDistrictToFront();
     refreshLegends();
   });
@@ -252,8 +251,6 @@ Object.entries(layerDefs).forEach(([key, ids]) => {
 /* =========================================================
    7) 地区（区境・ポイント）
 ========================================================= */
-let activeDistricts = {}; // key -> { boundaryLayer, boundaryBounds, pointsLayer }
-
 function ecColor(v) {
   return v > 0.2 ? "#800026" :
          v > 0.15 ? "#E31A1C" :
@@ -299,7 +296,7 @@ function updatePointsStyle(layer, sizeOnly = false) {
   });
 }
 
-/* soil.html に飛ぶ（src=soil_pointsのパスを渡す） */
+/* soil.html に飛ぶ（src=soil_points のパスを渡す） */
 function buildDiagnosisUrl(id, pointsSrc) {
   const base = "soil.html";
   const q1 = `id=${encodeURIComponent(String(id))}`;
@@ -307,6 +304,7 @@ function buildDiagnosisUrl(id, pointsSrc) {
   return `${base}?${q1}${q2}`;
 }
 
+/* A：ポップアップ内ボタン（確実に開く） */
 function buildDiagnosisPopupHtml(feature, pointsSrc) {
   const props = feature.properties || {};
   const id = props.field_id ?? props.soil_id ?? props.id;
@@ -336,9 +334,19 @@ function buildDiagnosisPopupHtml(feature, pointsSrc) {
           診断を見る
         </a>
       </div>
-      <div style="margin-top:6px; font-size:11px; color:#666;">（新しいタブで開きます）</div>
+
+      <div style="margin-top:6px; font-size:11px; color:#666;">
+        （新しいタブで開きます）
+      </div>
     </div>
   `;
+}
+
+/* B：ポイント操作で直接開く（Shift/Ctrl/⌘クリック or ダブルクリック） */
+function openDiagnosisInNewTab(feature, pointsSrc) {
+  const id = feature?.properties?.field_id ?? feature?.properties?.soil_id ?? feature?.properties?.id;
+  if (!id) return;
+  window.open(buildDiagnosisUrl(id, pointsSrc), "_blank", "noopener");
 }
 
 function addDistrictRow(cityKey, dist) {
@@ -401,8 +409,6 @@ function addDistrictRow(cityKey, dist) {
       }).addTo(map);
 
       state.boundaryBounds = state.boundaryLayer.getBounds();
-
-      // 保険：必ず最上
       state.boundaryLayer.bringToFront();
     })
     .catch((e) => console.warn("boundary 読み込み失敗:", dist.boundary, e));
@@ -426,16 +432,30 @@ function addDistrictRow(cityKey, dist) {
             fillOpacity: 0.9
           });
 
+          // A：ポップアップにボタン
           marker.bindPopup(buildDiagnosisPopupHtml(f, dist.points));
 
+          // Tooltip（任意）
           const fid = f.properties?.field_id ?? "";
           const place = f.properties?.["場所名"] ?? "";
           marker.bindTooltip(`${fid} ${place}`.trim(), { direction: "top" });
 
-          marker.on("dblclick", () => {
-            const id = f.properties?.field_id ?? f.properties?.soil_id ?? f.properties?.id;
-            if (!id) return;
-            window.open(buildDiagnosisUrl(id, dist.points), "_blank", "noopener");
+          // B：Shift/Ctrl/⌘クリックで直接開く
+          marker.on("click", (ev) => {
+            const oe = ev?.originalEvent;
+            const modifier = oe && (oe.shiftKey || oe.ctrlKey || oe.metaKey);
+            if (modifier) {
+              // 地図側のクリック処理（ポップアップなど）を止めたい場合は stopPropagation
+              // L.DomEvent.stop(oe);
+              openDiagnosisInNewTab(f, dist.points);
+            }
+          });
+
+          // B：ダブルクリックで直接開く（ダブルクリックズーム抑止）
+          marker.on("dblclick", (ev) => {
+            const oe = ev?.originalEvent;
+            if (oe) L.DomEvent.stop(oe);
+            openDiagnosisInNewTab(f, dist.points);
           });
 
           return marker;
@@ -443,8 +463,6 @@ function addDistrictRow(cityKey, dist) {
       });
 
       if (pointsToggle.checked) state.pointsLayer.addTo(map);
-
-      // 最後に区境線を最上へ戻す（B確定）
       bringDistrictToFront();
     })
     .catch((e) => console.warn("points 読み込み失敗:", dist.points, e));
@@ -465,7 +483,6 @@ function addDistrictRow(cityKey, dist) {
     if (!lay) return;
     if (pointsToggle.checked) lay.addTo(map);
     else map.removeLayer(lay);
-
     bringDistrictToFront();
   });
 
