@@ -5,206 +5,345 @@
   <title>土壌診断結果</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <style>
-    body { font-family: sans-serif; line-height: 1.7; padding: 16px; max-width: 860px; margin: 0 auto; }
-    .badge { display:inline-block; color:#fff; padding:4px 12px; border-radius:4px; margin-right:6px; font-weight:bold; font-size:14px; }
-    .stars { color: #ff9800; }
-    details { margin-top: 12px; background: #f9f9f9; padding: 10px; border-radius: 8px; }
-    canvas { max-width: 100%; margin: 20px auto; display: block; }
-    .topbar { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
-    .topbar a { color:#0a66c2; text-decoration:none; }
-    .warn { background:#fff3cd; border:1px solid #ffeeba; padding:10px; border-radius:8px; }
+    body { font-family: system-ui, -apple-system, "Segoe UI", sans-serif; line-height: 1.7; padding: 16px; max-width: 980px; margin: 0 auto; }
+    a { color:#0a66c2; text-decoration:none; }
+    a:hover { text-decoration:underline; }
+
+    .topbar { display:flex; gap:10px; align-items:center; justify-content:space-between; margin-bottom:12px; flex-wrap:wrap; }
+    .pill { display:inline-block; background:#eee; border-radius:999px; padding:2px 10px; font-size:12px; }
+    .btn { border:1px solid #ccc; background:#fafafa; padding:6px 10px; border-radius:8px; cursor:pointer; }
+    .btn:hover { background:#f0f0f0; }
+
+    .badge { display:inline-block; color:#fff; padding:4px 12px; border-radius:6px; margin-right:6px; font-weight:700; font-size:13px; }
+    .stars { color:#ff9800; }
+
+    .grid { display:grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+    @media (max-width: 760px){ .grid { grid-template-columns: 1fr; } }
+
+    .card { background:#fff; border:1px solid #eee; border-radius:12px; padding:12px; box-shadow: 0 2px 8px rgba(0,0,0,.06); }
+    .card h2 { font-size:16px; margin: 0 0 8px; }
+    .kpi { display:grid; grid-template-columns: repeat(3, 1fr); gap:10px; }
+    @media (max-width: 760px){ .kpi { grid-template-columns: 1fr 1fr; } }
+    .k { background:#f9f9f9; border-radius:10px; padding:10px; }
+    .k label { display:block; font-size:12px; color:#666; }
+    .k b { font-size:20px; }
+
+    details { margin-top: 8px; background:#fafafa; padding:10px; border-radius:12px; border:1px solid #eee; }
     table.meta { border-collapse: collapse; width:100%; }
-    table.meta th, table.meta td { border-bottom: 1px solid #eee; padding: 6px 8px; vertical-align: top; }
-    table.meta th { width: 220px; text-align: left; white-space: nowrap; }
-    .pill { display:inline-block; background:#eee; border-radius:999px; padding:2px 8px; font-size:12px; }
+    table.meta th, table.meta td { border-bottom:1px solid #eee; padding:6px 8px; vertical-align: top; }
+    table.meta th { width: 220px; text-align:left; white-space: nowrap; color:#666; font-weight:600; }
+
+    textarea, input[type="text"] { width:100%; box-sizing:border-box; border:1px solid #ccc; border-radius:8px; padding:8px; }
+    .warn { background:#fff3cd; border:1px solid #ffeeba; padding:10px; border-radius:10px; }
+    canvas { max-width: 100%; display:block; margin: 10px auto 0; }
   </style>
 </head>
 <body>
+
   <div class="topbar">
-    <a href="./index.html">← 地図へ戻る</a>
-    <span class="pill" id="idPill"></span>
+    <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+      <a href="./index.html">← 地図へ戻る</a>
+      <span class="pill" id="idPill"></span>
+      <span class="pill" id="srcPill"></span>
+    </div>
+    <div style="display:flex; gap:8px;">
+      <button class="btn" id="prevBtn">← 前へ</button>
+      <button class="btn" id="nextBtn">次へ →</button>
+      <button class="btn" id="editToggle">編集</button>
+      <button class="btn" id="saveBtn" style="display:none;">保存</button>
+    </div>
   </div>
 
-  <h1 id="fieldName"></h1>
-  <p id="location"></p>
+  <h1 id="fieldName" style="margin:6px 0;"></h1>
+  <div id="location" style="color:#555;"></div>
 
-  <div>
-    <span class="badge" id="rank"></span>
-    <span class="badge" style="background:#4caf50;">soil_points 参照</span>
+  <div style="margin-top:10px;">
+    <span class="badge" id="rankBadge"></span>
+    <span class="badge" style="background:#4caf50;">soil_points参照</span>
   </div>
 
-  <p id="oneLine" style="font-weight:bold; margin-top:1em;"></p>
+  <p id="oneLine" style="font-weight:700; margin-top:10px;"></p>
 
-  <h2>🌱 ブランド評価（仮）</h2>
-  <canvas id="radarChart" width="400" height="400"></canvas>
+  <div class="grid" style="margin-top:12px;">
+    <div class="card">
+      <h2>主要指標</h2>
+      <div class="kpi">
+        <div class="k"><label>EC</label><b id="kEC">-</b></div>
+        <div class="k"><label>pH</label><b id="kpH">-</b></div>
+        <div class="k"><label>CEC</label><b id="kCEC">-</b></div>
+        <div class="k"><label>採取日</label><b id="kDate" style="font-size:14px;">-</b></div>
+        <div class="k"><label>座標</label><b id="kCoord" style="font-size:14px;">-</b></div>
+      </div>
+    </div>
 
-  <ul>
-    <li>🍚 おいしさ：<span class="stars" id="taste"></span></li>
-    <li>🌱 土壌の健全性：<span class="stars" id="soilHealth"></span></li>
-    <li>🌏 環境配慮：<span class="stars" id="environment"></span></li>
-    <li>🛡 安全性：<span class="stars" id="safety"></span></li>
-  </ul>
+    <div class="card">
+      <h2>ブランド評価（仮）</h2>
+      <div>
+        <div>🍚 おいしさ：<span class="stars" id="taste"></span></div>
+        <div>🌱 土壌の健全性：<span class="stars" id="soilHealth"></span></div>
+        <div>🌏 環境配慮：<span class="stars" id="environment"></span></div>
+        <div>🛡 安全性：<span class="stars" id="safety"></span></div>
+      </div>
+      <canvas id="radarChart" width="380" height="380"></canvas>
+    </div>
 
-  <h2>📖 主な課題・改善策</h2>
-  <p id="story"></p>
+    <div class="card full" style="grid-column: 1 / -1;">
+      <h2>メモ（編集可能：localStorage保存）</h2>
+      <div id="memoView">
+        <div><b>固定説明：</b><span id="fixedDescView"></span></div>
+        <div><b>評価：</b><span id="evalView"></span></div>
+        <div><b>主な課題：</b><span id="issueView"></span></div>
+        <div><b>改善策：</b><span id="solutionView"></span></div>
+      </div>
 
-  <details open>
-    <summary>🔬 soil_points.geojson の属性（そのまま表示）</summary>
+      <div id="memoEdit" style="display:none; margin-top:10px;">
+        <div style="margin-bottom:8px;">
+          <div style="font-weight:700; margin-bottom:4px;">固定説明</div>
+          <input type="text" id="fixedDescInput" placeholder="例：地形・土地利用の説明など">
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-weight:700; margin-bottom:4px;">評価</div>
+          <input type="text" id="evalInput" placeholder="例：良 / 普通 / 要改善 など">
+        </div>
+        <div style="margin-bottom:8px;">
+          <div style="font-weight:700; margin-bottom:4px;">主な課題</div>
+          <textarea id="issueInput" rows="3" placeholder="主な課題を記入"></textarea>
+        </div>
+        <div>
+          <div style="font-weight:700; margin-bottom:4px;">改善策</div>
+          <textarea id="solutionInput" rows="3" placeholder="改善策を記入"></textarea>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <details>
+    <summary>🔬 soil_points の属性（すべて表示）</summary>
     <div id="analysisWrap"></div>
   </details>
 
-  <h2>🗺 座標</h2>
-  <p id="coords"></p>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  https://cdn.jsdelivr.net/npm/chart.js</script>
   <script>
-    // ★ soil_points の場所をURLで受け取る（無ければデフォルト）
     const params = new URLSearchParams(location.search);
     const id = params.get("id");
     const src = params.get("src") || "data/Saitama/Chichibu/Oota/soil_points.geojson";
 
-    // ランク色
-    function rankColor(rank, alpha = 1) {
-      switch (rank) {
-        case "A": return `rgba(76, 175, 80, ${alpha})`;
-        case "B": return `rgba(255, 193, 7, ${alpha})`;
-        case "C": return `rgba(244, 67, 54, ${alpha})`;
-        default:  return `rgba(158, 158, 158, ${alpha})`;
+    document.getElementById("idPill").textContent = `ID: ${id ?? "-"}`;
+    document.getElementById("srcPill").textContent = `src: ${src}`;
+
+    function rankColor(rank, alpha=1){
+      switch(rank){
+        case "A": return `rgba(76,175,80,${alpha})`;
+        case "B": return `rgba(255,193,7,${alpha})`;
+        case "C": return `rgba(244,67,54,${alpha})`;
+        default: return `rgba(158,158,158,${alpha})`;
       }
     }
+    function star(n){
+      const k = Math.max(0, Math.min(5, Number(n)||0));
+      return "★".repeat(k) + "☆".repeat(5-k);
+    }
 
-    // 仮ランク（ECベース：好きに変更OK）
-    function calcRank(p) {
+    // 仮ランク：ECでざっくり（後で閾値を一緒に決めよう）
+    function calcRank(p){
       const ec = Number(p?.EC);
       if (!Number.isFinite(ec)) return "—";
       if (ec >= 0.15) return "B";
       if (ec >= 0.10) return "C";
       return "C";
     }
-
-    // 仮スコア（EC/pH/CECから雑に作る：好きに変更OK）
-    function calcScores(p) {
+    // 仮スコア：EC/pH/CEC
+    function calcScores(p){
       const ec  = Number(p?.EC);
       const ph  = Number(p?.pH);
       const cec = Number(p?.CEC);
-      const clamp = (x) => Math.max(0, Math.min(5, x));
-
-      const soil_health = clamp(Math.round(Number.isFinite(cec) ? (cec / 10) : 2));
-      const safety      = clamp(Number.isFinite(ph) ? ((ph >= 6 && ph <= 7.2) ? 5 : 3) : 3);
-      const environment = clamp(Number.isFinite(ec) ? ((ec >= 0.12) ? 4 : 3) : 3);
-      const taste       = clamp(Math.round((soil_health + safety) / 2));
+      const clamp = x => Math.max(0, Math.min(5, x));
+      const soil_health = clamp(Math.round(Number.isFinite(cec) ? (cec/10) : 2));
+      const safety      = clamp(Number.isFinite(ph) ? ((ph>=6 && ph<=7.2)?5:3) : 3);
+      const environment = clamp(Number.isFinite(ec) ? ((ec>=0.12)?4:3) : 3);
+      const taste       = clamp(Math.round((soil_health + safety)/2));
       return { taste, soil_health, environment, safety };
     }
 
-    function star(n) {
-      const k = Math.max(0, Math.min(5, Number(n) || 0));
-      return "★".repeat(k) + "☆".repeat(5 - k);
-    }
-
-    function renderPropsTable(props) {
-      const entries = Object.entries(props || {});
+    function renderPropsTable(props){
       const table = document.createElement("table");
       table.className = "meta";
-      entries.forEach(([k, v]) => {
-        const tr = document.createElement("tr");
-        const th = document.createElement("th"); th.textContent = k;
-        const td = document.createElement("td"); td.textContent = (v ?? "");
-        tr.append(th, td);
+      Object.entries(props || {}).forEach(([k,v])=>{
+        const tr=document.createElement("tr");
+        const th=document.createElement("th"); th.textContent=k;
+        const td=document.createElement("td"); td.textContent=(v ?? "");
+        tr.append(th,td);
         table.append(tr);
       });
       return table;
     }
 
-    async function main() {
-      if (!id) {
+    // localStorage保存（idごと）
+    function loadMemo(fieldId){
+      try{
+        const raw = localStorage.getItem("soilMemo:"+fieldId);
+        return raw ? JSON.parse(raw) : {};
+      }catch{ return {}; }
+    }
+    function saveMemo(fieldId, memo){
+      localStorage.setItem("soilMemo:"+fieldId, JSON.stringify(memo));
+    }
+
+    let featureList = [];
+    let currentIndex = -1;
+    let radarChart = null;
+
+    async function main(){
+      if(!id){
         document.body.innerHTML = `<div class="warn">IDが指定されていません。例：<code>soil.html?id=F001</code></div>`;
         return;
       }
-      document.getElementById("idPill").textContent = `ID: ${id}`;
 
       let fc;
-      try {
-        const res = await fetch(src, { cache: "no-store" });
-        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+      try{
+        const res = await fetch(src, {cache:"no-store"});
+        if(!res.ok) throw new Error(res.status+" "+res.statusText);
         fc = await res.json();
-      } catch (e) {
-        document.body.innerHTML = `<div class="warn">
-          soil_points.geojson を読み込めませんでした。<br>
-          読みに行ったURL：<code>${src}</code><br>
-          エラー：<code>${String(e)}</code>
-        </div>`;
+      }catch(e){
+        document.body.innerHTML = `<div class="warn">soil_points を読み込めません：<code>${src}</code><br>エラー：<code>${String(e)}</code></div>`;
         return;
       }
 
-      const feat = (fc.features || []).find(f => String(f?.properties?.field_id) === String(id));
-      if (!feat) {
-        document.body.innerHTML = `<div class="warn">
-          ID <code>${id}</code> が soil_points.geojson に見つかりません。<br>
-          <code>properties.field_id</code> が一致しているか確認してね。
-        </div>`;
+      featureList = fc.features || [];
+      currentIndex = featureList.findIndex(f => String(f?.properties?.field_id) === String(id));
+      if(currentIndex < 0){
+        document.body.innerHTML = `<div class="warn">ID <code>${id}</code> が見つかりません（src=${src}）。</div>`;
         return;
       }
+      render(featureList[currentIndex]);
+      setupNavButtons();
+    }
 
-      const p = feat.properties || {};
-      const [lon, lat] = feat.geometry?.coordinates || [];
+    function setupNavButtons(){
+      const prevBtn = document.getElementById("prevBtn");
+      const nextBtn = document.getElementById("nextBtn");
+
+      prevBtn.disabled = (currentIndex <= 0);
+      nextBtn.disabled = (currentIndex >= featureList.length-1);
+
+      prevBtn.onclick = () => {
+        if(currentIndex <= 0) return;
+        const fid = featureList[currentIndex-1].properties?.field_id;
+        location.href = `soil.html?id=${encodeURIComponent(fid)}&src=${encodeURIComponent(src)}`;
+      };
+      nextBtn.onclick = () => {
+        if(currentIndex >= featureList.length-1) return;
+        const fid = featureList[currentIndex+1].properties?.field_id;
+        location.href = `soil.html?id=${encodeURIComponent(fid)}&src=${encodeURIComponent(src)}`;
+      };
+    }
+
+    function render(f){
+      const p = f.properties || {};
+      const [lon, lat] = f.geometry?.coordinates || [];
 
       document.getElementById("fieldName").textContent = p.field_id || id;
-      document.getElementById("location").textContent = p["場所名"] || "";
+      document.getElementById("location").textContent  = p["場所名"] || "";
 
-      const issue = p["主な課題"] ? `主な課題：${p["主な課題"]}` : "（主な課題が未入力）";
-      const action = p["改善策"] ? `改善策：${p["改善策"]}` : "（改善策が未入力）";
-      document.getElementById("oneLine").textContent = issue;
-      document.getElementById("story").textContent = action;
+      document.getElementById("kEC").textContent   = (p.EC ?? "-");
+      document.getElementById("kpH").textContent   = (p.pH ?? "-");
+      document.getElementById("kCEC").textContent  = (p.CEC ?? "-");
+      document.getElementById("kDate").textContent = (p["採取日"] ?? "-");
+      document.getElementById("kCoord").textContent = (Number.isFinite(lat) && Number.isFinite(lon)) ? `${lat.toFixed(6)}, ${lon.toFixed(6)}` : "-";
 
+      // 一言（課題があればそれを優先、なければ自動生成）
+      const auto = (() => {
+        const ec = Number(p.EC);
+        const ph = Number(p.pH);
+        const cec = Number(p.CEC);
+        let msg = "測定値に基づき管理方針を検討できます。";
+        if(Number.isFinite(ec) && ec < 0.10) msg = "ECが低め：施肥・有機物管理の検討が有効。";
+        if(Number.isFinite(ph) && (ph < 5.5 || ph > 7.5)) msg = "pHが適正域外：矯正資材の検討が有効。";
+        if(Number.isFinite(cec) && cec < 10) msg = "CECが低め：保肥力向上（有機物投入等）が有効。";
+        return msg;
+      })();
+
+      const memo = loadMemo(p.field_id || id);
+      const fixedDesc = memo.fixedDesc ?? p["固定説明"] ?? "";
+      const evalTxt   = memo.evalTxt   ?? p["評価"] ?? "";
+      const issue     = memo.issue     ?? p["主な課題"] ?? "";
+      const solution  = memo.solution  ?? p["改善策"] ?? "";
+
+      document.getElementById("oneLine").textContent = issue ? `主な課題：${issue}` : auto;
+
+      document.getElementById("fixedDescView").textContent = fixedDesc || "（未入力）";
+      document.getElementById("evalView").textContent      = evalTxt   || "（未入力）";
+      document.getElementById("issueView").textContent     = issue     || "（未入力）";
+      document.getElementById("solutionView").textContent  = solution  || "（未入力）";
+
+      document.getElementById("fixedDescInput").value = fixedDesc;
+      document.getElementById("evalInput").value      = evalTxt;
+      document.getElementById("issueInput").value     = issue;
+      document.getElementById("solutionInput").value  = solution;
+
+      // ランク＆スコア
       const rank = calcRank(p);
-      const rankBadge = document.getElementById("rank");
+      const rankBadge = document.getElementById("rankBadge");
       rankBadge.textContent = `${rank}ランク（仮）`;
-      rankBadge.style.backgroundColor = rankColor(rank);
+      rankBadge.style.background = rankColor(rank);
 
       const scores = calcScores(p);
-      document.getElementById("taste").textContent = star(scores.taste);
-      document.getElementById("soilHealth").textContent = star(scores.soil_health);
+      document.getElementById("taste").textContent       = star(scores.taste);
+      document.getElementById("soilHealth").textContent  = star(scores.soil_health);
       document.getElementById("environment").textContent = star(scores.environment);
-      document.getElementById("safety").textContent = star(scores.safety);
+      document.getElementById("safety").textContent      = star(scores.safety);
 
+      // レーダー更新
       const ctx = document.getElementById("radarChart");
-      const mainColor = rankColor(rank, 1);
-      const fillColor = rankColor(rank, 0.25);
-
-      new Chart(ctx, {
-        type: "radar",
-        data: {
-          labels: ["おいしさ", "土壌の健全性", "環境配慮", "安全性"],
-          datasets: [{
-            label: "土壌診断評価（仮）",
-            data: [scores.taste, scores.soil_health, scores.environment, scores.safety],
-            fill: true,
-            backgroundColor: fillColor,
-            borderColor: mainColor,
-            pointBackgroundColor: mainColor
+      if (radarChart) radarChart.destroy();
+      radarChart = new Chart(ctx, {
+        type:"radar",
+        data:{
+          labels:["おいしさ","土壌の健全性","環境配慮","安全性"],
+          datasets:[{
+            data:[scores.taste, scores.soil_health, scores.environment, scores.safety],
+            fill:true,
+            backgroundColor: rankColor(rank, 0.25),
+            borderColor: rankColor(rank, 1),
+            pointBackgroundColor: rankColor(rank, 1)
           }]
         },
-        options: {
-          scales: {
-            r: {
-              min: 0,
-              max: 5,
-              ticks: { display: false, stepSize: 1 },
-              pointLabels: { font: { size: 14 } }
-            }
-          },
-          plugins: { legend: { display: false } }
+        options:{
+          scales:{ r:{ min:0, max:5, ticks:{display:false, stepSize:1} } },
+          plugins:{ legend:{display:false} }
         }
       });
 
+      // すべての属性
       const wrap = document.getElementById("analysisWrap");
       wrap.innerHTML = "";
       wrap.appendChild(renderPropsTable(p));
 
-      document.getElementById("coords").textContent =
-        (Number.isFinite(lat) && Number.isFinite(lon))
-          ? `緯度: ${lat} / 経度: ${lon}`
-          : "座標が取得できませんでした。";
+      // 編集トグル＆保存
+      const editToggle = document.getElementById("editToggle");
+      const saveBtn = document.getElementById("saveBtn");
+      const memoEdit = document.getElementById("memoEdit");
+
+      let editing = false;
+      editToggle.onclick = () => {
+        editing = !editing;
+        memoEdit.style.display = editing ? "block" : "none";
+        saveBtn.style.display = editing ? "inline-block" : "none";
+        editToggle.textContent = editing ? "閲覧" : "編集";
+      };
+
+      saveBtn.onclick = () => {
+        const newMemo = {
+          fixedDesc: document.getElementById("fixedDescInput").value,
+          evalTxt: document.getElementById("evalInput").value,
+          issue: document.getElementById("issueInput").value,
+          solution: document.getElementById("solutionInput").value
+        };
+        saveMemo(p.field_id || id, newMemo);
+        // 再描画
+        render(f);
+        alert("保存しました（この端末のブラウザに保存されます）");
+      };
     }
 
     main();

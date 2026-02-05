@@ -371,3 +371,7 @@ textarea { resize: vertical; }
 .leaflet-control-layers {
   z-index: 2002;
 }
+
+/* Leafletのコントロールを常に前面に */
+.leaflet-top, .leaflet-bottom { z-index: 3000; }
+.leaflet-control { z-index: 3001; }
