@@ -1,16 +1,15 @@
-
-!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="ja">
 <head>
   <meta charset="UTF-8" />
   <title>土壌調査（ECODRR）Web GIS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- Leaflet -->
+  <!-- Leaflet（必ず link/script タグで読み込む） -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  <!-- App CSS -->
+  <!-- 自作CSS -->
   <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
@@ -46,6 +45,7 @@
             <option value="osm">OSM</option>
           </select>
         </div>
+
         <div class="row">
           <label>透明度</label>
           <input id="baseOpacity" type="range" min="0" max="1" step="0.05" value="1">
@@ -53,9 +53,7 @@
         <div class="small">※背景はここで確実に切替できます</div>
       </div>
 
-      <!-- ▼ここに「タイルレイヤ」全部と「地区UI」全部を入れる（省略しない） -->
-      <!-- 例：twiToggle〜suidenBri、legends、districtList、pointColor、pointSize、ptMode等 -->
-
+      <!-- ここに「タイルレイヤUI」と「地区UI（ポイント色/サイズ/EC/単色）」を省略せず入れる -->
       <div class="group">
         <b>凡例</b>
         <div id="legends"></div>
@@ -66,10 +64,10 @@
         <div id="districtList"></div>
       </div>
 
-    </div><!-- /panelBody -->
-  </div><!-- /panel -->
+    </div>
+  </div>
 
-  <!-- App JS（順番重要：masked-tile.js → app.js） -->
+  <!-- JS（順番重要：masked-tile.js → app.js） -->
   <script src="./assets/js/masked-tile.js"></script>
   <script src="./assets/js/app.js"></script>
 </body>
