@@ -28,7 +28,6 @@ const tileKeyToLabel = {
 
 /* ========= 凡例ユーティリティ ========= */
 function pathToLegend(url) {
-  // 期待形式: .../{z}/{x}/{y}.png → .../hanrei.png
   const idx = url.indexOf("{z}");
   if (idx !== -1) return url.slice(0, idx) + "hanrei.png";
   return url.replace(/\{z\}\/\{x\}\/\{y\}\.png.*$/, "hanrei.png")
@@ -168,14 +167,16 @@ function updatePointsStyle(layer, sizeOnly = false) {
   });
 }
 
-/* ✅ ここがポイント：診断ページURLを作る（ルート直下に soil_result.html を置く想定） */
-function buildDiagnosisUrl(id) {
-  // index.html から見て ./soil_result.html でOK
-  return `soil_result.html?id=${encodeURIComponent(String(id))}`;
+/* ✅ 診断ページURLを作る：soil.html が soil_points を読むので src を渡す */
+function buildDiagnosisUrl(id, pointsSrc) {
+  const base = "soil.html";
+  const q1 = `id=${encodeURIComponent(String(id))}`;
+  const q2 = pointsSrc ? `&src=${encodeURIComponent(pointsSrc)}` : "";
+  return `${base}?${q1}${q2}`;
 }
 
-/* ✅ ポップアップのHTML（確実に開く方式） */
-function buildDiagnosisPopupHtml(f) {
+/* ✅ ポップアップHTML（本物のHTMLを返す） */
+function buildDiagnosisPopupHtml(f, pointsSrc) {
   const props = f.properties || {};
   const id = props.field_id ?? props.soil_id ?? props.id;
   const place = props["場所名"] ?? "";
@@ -190,7 +191,7 @@ function buildDiagnosisPopupHtml(f) {
     `;
   }
 
-  const url = buildDiagnosisUrl(id);
+  const url = buildDiagnosisUrl(id, pointsSrc);
 
   return `
     <div style="min-width:240px; line-height:1.6;">
@@ -288,19 +289,19 @@ function addDistrictRow(cityKey, dist) {
             fillOpacity: 0.9
           });
 
-          // ポップアップに「診断を見る」リンクを出す（確実）
-          marker.bindPopup(buildDiagnosisPopupHtml(f));
+          // ✅ ポップアップに「診断を見る」リンク（src=dist.pointsを渡す）
+          marker.bindPopup(buildDiagnosisPopupHtml(f, dist.points));
 
-          // ツールチップ（任意）
+          // ツールチップ
           const fid = f.properties?.field_id ?? "";
           const place = f.properties?.["場所名"] ?? "";
           marker.bindTooltip(`${fid} ${place}`.trim(), { direction: "top" });
 
-          // ダブルクリックでも直接開ける（任意）
+          // ダブルクリックで直接開く（任意）
           marker.on("dblclick", () => {
             const id = f.properties?.field_id ?? f.properties?.soil_id ?? f.properties?.id;
             if (!id) return;
-            window.open(buildDiagnosisUrl(id), "_blank", "noopener");
+            window.open(buildDiagnosisUrl(id, dist.points), "_blank", "noopener");
           });
 
           return marker;
@@ -337,10 +338,7 @@ function renderPrefTabs() {
   Object.keys(CATALOG).forEach((prefKey) => {
     const pref = CATALOG[prefKey];
     const btn = document.createElement("div");
-    btn.className = "tab" + (prefKey === currentPref ? " active" : "");
-    btn.textContent = pref.display;
-    btn.addEventListener("click", () => selectPref(prefKey));
-    prefTabs.append(btn);
+prefTabs.append(btn);
   });
 }
 
@@ -373,7 +371,6 @@ function selectCity(cityKey) {
   const city = CATALOG[currentPref].cities[cityKey];
   map.setView(city.center, city.zoom);
 
-  // マスク読み込み前はタイルUI無効化（外側白化対策）
   setTilesUIEnabled(false);
 
   fetch(city.cityMask, { cache: "no-store" })
@@ -390,7 +387,6 @@ function selectCity(cityKey) {
 
       setTilesUIEnabled(true);
 
-      // チェック状態に合わせて表示
       Object.entries(layerDefs).forEach(([key, ids]) => {
         const chk = document.getElementById(ids.chk);
         const h = document.getElementById(ids.h);

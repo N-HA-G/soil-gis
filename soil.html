@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <title>土壌診断結果</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body { font-family: sans-serif; line-height: 1.7; padding: 16px; max-width: 860px; margin: 0 auto; }
+    .badge { display:inline-block; color:#fff; padding:4px 12px; border-radius:4px; margin-right:6px; font-weight:bold; font-size:14px; }
+    .stars { color: #ff9800; }
+    details { margin-top: 12px; background: #f9f9f9; padding: 10px; border-radius: 8px; }
+    canvas { max-width: 100%; margin: 20px auto; display: block; }
+    .topbar { display:flex; gap:12px; align-items:center; margin-bottom:12px; }
+    .topbar a { color:#0a66c2; text-decoration:none; }
+    .warn { background:#fff3cd; border:1px solid #ffeeba; padding:10px; border-radius:8px; }
+    table.meta { border-collapse: collapse; width:100%; }
+    table.meta th, table.meta td { border-bottom: 1px solid #eee; padding: 6px 8px; vertical-align: top; }
+    table.meta th { width: 220px; text-align: left; white-space: nowrap; }
+    .pill { display:inline-block; background:#eee; border-radius:999px; padding:2px 8px; font-size:12px; }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <a href="./index.html">← 地図へ戻る</a>
+    <span class="pill" id="idPill"></span>
+  </div>
+
+  <h1 id="fieldName"></h1>
+  <p id="location"></p>
+
+  <div>
+    <span class="badge" id="rank"></span>
+    <span class="badge" style="background:#4caf50;">soil_points 参照</span>
+  </div>
+
+  <p id="oneLine" style="font-weight:bold; margin-top:1em;"></p>
+
+  <h2>🌱 ブランド評価（仮）</h2>
+  <canvas id="radarChart" width="400" height="400"></canvas>
+
+  <ul>
+    <li>🍚 おいしさ：<span class="stars" id="taste"></span></li>
+    <li>🌱 土壌の健全性：<span class="stars" id="soilHealth"></span></li>
+    <li>🌏 環境配慮：<span class="stars" id="environment"></span></li>
+    <li>🛡 安全性：<span class="stars" id="safety"></span></li>
+  </ul>
+
+  <h2>📖 主な課題・改善策</h2>
+  <p id="story"></p>
+
+  <details open>
+    <summary>🔬 soil_points.geojson の属性（そのまま表示）</summary>
+    <div id="analysisWrap"></div>
+  </details>
+
+  <h2>🗺 座標</h2>
+  <p id="coords"></p>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    // ★ soil_points の場所をURLで受け取る（無ければデフォルト）
+    const params = new URLSearchParams(location.search);
+    const id = params.get("id");
+    const src = params.get("src") || "data/Saitama/Chichibu/Oota/soil_points.geojson";
+
+    // ランク色
+    function rankColor(rank, alpha = 1) {
+      switch (rank) {
+        case "A": return `rgba(76, 175, 80, ${alpha})`;
+        case "B": return `rgba(255, 193, 7, ${alpha})`;
+        case "C": return `rgba(244, 67, 54, ${alpha})`;
+        default:  return `rgba(158, 158, 158, ${alpha})`;
+      }
+    }
+
+    // 仮ランク（ECベース：好きに変更OK）
+    function calcRank(p) {
+      const ec = Number(p?.EC);
+      if (!Number.isFinite(ec)) return "—";
+      if (ec >= 0.15) return "B";
+      if (ec >= 0.10) return "C";
+      return "C";
+    }
+
+    // 仮スコア（EC/pH/CECから雑に作る：好きに変更OK）
+    function calcScores(p) {
+      const ec  = Number(p?.EC);
+      const ph  = Number(p?.pH);
+      const cec = Number(p?.CEC);
+      const clamp = (x) => Math.max(0, Math.min(5, x));
+
+      const soil_health = clamp(Math.round(Number.isFinite(cec) ? (cec / 10) : 2));
+      const safety      = clamp(Number.isFinite(ph) ? ((ph >= 6 && ph <= 7.2) ? 5 : 3) : 3);
+      const environment = clamp(Number.isFinite(ec) ? ((ec >= 0.12) ? 4 : 3) : 3);
+      const taste       = clamp(Math.round((soil_health + safety) / 2));
+      return { taste, soil_health, environment, safety };
+    }
+
+    function star(n) {
+      const k = Math.max(0, Math.min(5, Number(n) || 0));
+      return "★".repeat(k) + "☆".repeat(5 - k);
+    }
+
+    function renderPropsTable(props) {
+      const entries = Object.entries(props || {});
+      const table = document.createElement("table");
+      table.className = "meta";
+      entries.forEach(([k, v]) => {
+        const tr = document.createElement("tr");
+        const th = document.createElement("th"); th.textContent = k;
+        const td = document.createElement("td"); td.textContent = (v ?? "");
+        tr.append(th, td);
+        table.append(tr);
+      });
+      return table;
+    }
+
+    async function main() {
+      if (!id) {
+        document.body.innerHTML = `<div class="warn">IDが指定されていません。例：<code>soil.html?id=F001</code></div>`;
+        return;
+      }
+      document.getElementById("idPill").textContent = `ID: ${id}`;
+
+      let fc;
+      try {
+        const res = await fetch(src, { cache: "no-store" });
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        fc = await res.json();
+      } catch (e) {
+        document.body.innerHTML = `<div class="warn">
+          soil_points.geojson を読み込めませんでした。<br>
+          読みに行ったURL：<code>${src}</code><br>
+          エラー：<code>${String(e)}</code>
+        </div>`;
+        return;
+      }
+
+      const feat = (fc.features || []).find(f => String(f?.properties?.field_id) === String(id));
+      if (!feat) {
+        document.body.innerHTML = `<div class="warn">
+          ID <code>${id}</code> が soil_points.geojson に見つかりません。<br>
+          <code>properties.field_id</code> が一致しているか確認してね。
+        </div>`;
+        return;
+      }
+
+      const p = feat.properties || {};
+      const [lon, lat] = feat.geometry?.coordinates || [];
+
+      document.getElementById("fieldName").textContent = p.field_id || id;
+      document.getElementById("location").textContent = p["場所名"] || "";
+
+      const issue = p["主な課題"] ? `主な課題：${p["主な課題"]}` : "（主な課題が未入力）";
+      const action = p["改善策"] ? `改善策：${p["改善策"]}` : "（改善策が未入力）";
+      document.getElementById("oneLine").textContent = issue;
+      document.getElementById("story").textContent = action;
+
+      const rank = calcRank(p);
+      const rankBadge = document.getElementById("rank");
+      rankBadge.textContent = `${rank}ランク（仮）`;
+      rankBadge.style.backgroundColor = rankColor(rank);
+
+      const scores = calcScores(p);
+      document.getElementById("taste").textContent = star(scores.taste);
+      document.getElementById("soilHealth").textContent = star(scores.soil_health);
+      document.getElementById("environment").textContent = star(scores.environment);
+      document.getElementById("safety").textContent = star(scores.safety);
+
+      const ctx = document.getElementById("radarChart");
+      const mainColor = rankColor(rank, 1);
+      const fillColor = rankColor(rank, 0.25);
+
+      new Chart(ctx, {
+        type: "radar",
+        data: {
+          labels: ["おいしさ", "土壌の健全性", "環境配慮", "安全性"],
+          datasets: [{
+            label: "土壌診断評価（仮）",
+            data: [scores.taste, scores.soil_health, scores.environment, scores.safety],
+            fill: true,
+            backgroundColor: fillColor,
+            borderColor: mainColor,
+            pointBackgroundColor: mainColor
+          }]
+        },
+        options: {
+          scales: {
+            r: {
+              min: 0,
+              max: 5,
+              ticks: { display: false, stepSize: 1 },
+              pointLabels: { font: { size: 14 } }
+            }
+          },
+          plugins: { legend: { display: false } }
+        }
+      });
+
+      const wrap = document.getElementById("analysisWrap");
+      wrap.innerHTML = "";
+      wrap.appendChild(renderPropsTable(p));
+
+      document.getElementById("coords").textContent =
+        (Number.isFinite(lat) && Number.isFinite(lon))
+          ? `緯度: ${lat} / 経度: ${lon}`
+          : "座標が取得できませんでした。";
+    }
+
+    main();
+  </script>
+</body>
+</html>
