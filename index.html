@@ -5,27 +5,11 @@
   <title>土壌調査（ECODRR）Web GIS</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <!-- iframe 埋め込み対策（できるだけ早く実行） -->
-  <script>
-    (function () {
-      try {
-        // iframe 内で開かれているなら、最上位（親）をこのページに移動
-        if (window.top !== window.self) {
-          window.top.location.href = window.location.href;
-        }
-      } catch (e) {
-        // cross-origin 制限などで top に触れない場合の保険
-        // （この場合は自分自身を遷移させるだけでも「埋め込みの意図」を崩せる）
-        window.location.href = window.location.href;
-      }
-    })();
-  </script>
-
   <!-- Leaflet -->
-  https://unpkg.com/leaflet@1.9.4/dist/leaflet.css
-  https://unpkg.com/leaflet@1.9.4/dist/leaflet.js</script>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
-  ./assets/css/style.css
+  <link rel="stylesheet" href="./assets/css/style.css">
 </head>
 <body>
 
@@ -140,7 +124,7 @@
   </div><!-- /panelBody -->
 </div><!-- /panel -->
 
-./assets/js/masked-tile.js</script>
-./assets/js/app.js</script>
+<script src="./assets/js/masked-tile.js"></script>
+<script src="./assets/js/app.js"></script>
 </body>
 </html>
