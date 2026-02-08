@@ -1,0 +1,21 @@
+/                       ← GitHub Pages ルート（この階層に index.html）
+├─ index.html ←メイン
+├─soil.html ←Dashboardの中身
+├─ assets/
+│   ├─ css/style.css ←GISのレイヤーパネル
+│   └─ js/
+│       ├─ masked-tile.js ← Leafletのタイル・ポイント読み込み用
+│       └─ app.js ←Leafletの表示部分
+└─ data/
+    ├─ catalog.json  ←地域別ファイルの定義づけ
+    └─ Saitama/       ←都道府県レベルのファイル階層
+        └─ Chichibu/ ←市区町村レベルのファイル階層
+            ├─ chichibu.geojson ←区境(秩父市)
+            ├─ 01_TWI_chichibu/{z}/{x}/{y}.png ←ECODRRデータ
+            ├─ 02_HAND_chichibu/{z}/{x}/{y}.png ←ECODRRデータ
+            ├─ 03_Tikei_chichibu/{z}/{x}/{y}.png ←ECODRRデータ
+            ├─ 04_Keikan_chichibu/{z}/{x}/{y}.png ←ECODRRデータ
+            ├─ 05_Suiden_chichibu/{z}/{x}/{y}.png ←ECODRRデータ
+            └─ Oota/
+                ├─ chichibuoota.geojson     ← 区境（線で表示）(太田地区)
+                └─ soil_points.geojson      ← 調査地点・測定結果

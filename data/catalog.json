@@ -1,27 +1,26 @@
-
 {
   "Saitama": {
     "display": "埼玉",
+    "base": "data/Saitama",
     "cities": {
       "Chichibu": {
         "display": "秩父",
+        "base": "Chichibu",
         "center": [36.055, 139.07],
         "zoom": 13,
-        "cityMask": "data/Saitama/Chichibu/chichibu.geojson",
-        "tiles": {
-          "twi": "data/Saitama/Chichibu/01_TWI_chichibu/{z}/{x}/{y}.png",
-          "hand": "data/Saitama/Chichibu/02_HAND_chichibu/{z}/{x}/{y}.png",
-          "tikei": "data/Saitama/Chichibu/03_Tikei_chichibu/{z}/{x}/{y}.png",
-          "keikan": "data/Saitama/Chichibu/04_Keikan_chichibu/{z}/{x}/{y}.png",
-          "suiden": "data/Saitama/Chichibu/05_Suiden_chichibu/{z}/{x}/{y}.png"
+
+        "cityMask": "chichibu.geojson",
+
+        "tileDirs": {
+          "twi": "01_TWI_chichibu",
+          "hand": "02_HAND_chichibu",
+          "tikei": "03_Tikei_chichibu",
+          "keikan": "04_Keikan_chichibu",
+          "suiden": "05_Suiden_chichibu"
         },
+
         "districts": [
-          {
-            "key": "Oota",
-            "display": "大田",
-            "boundary": "data/Saitama/Chichibu/Oota/chichibuoota.geojson",
-            "points": "data/Saitama/Chichibu/Oota/soil_points.geojson"
-          }
+          { "key": "Oota", "display": "大田", "base": "Oota", "boundary": "chichibuoota.geojson", "points": "soil_points.geojson" }
         ]
       }
     }
