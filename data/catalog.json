@@ -8,9 +8,7 @@
         "base": "Chichibu",
         "center": [36.055, 139.07],
         "zoom": 13,
-
         "cityMask": "chichibu.geojson",
-
         "tileDirs": {
           "twi": "01_TWI_chichibu",
           "hand": "02_HAND_chichibu",
@@ -18,7 +16,6 @@
           "keikan": "04_Keikan_chichibu",
           "suiden": "05_Suiden_chichibu"
         },
-
         "districts": [
           { "key": "Oota", "display": "大田", "base": "Oota", "boundary": "chichibuoota.geojson", "points": "soil_points.geojson" }
         ]
@@ -26,3 +23,4 @@
     }
   }
 }
+``

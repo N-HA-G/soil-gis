@@ -1,3 +1,4 @@
+
 /* =========================================================
    0) パネル最小化（存在チェック付き）
 ========================================================= */
@@ -173,6 +174,70 @@ let currentCity = null;
 let cityMaskGeo = null;
 
 /* =========================================================
+   4.5) catalog v2 正規化（ここが追加ポイント）
+========================================================= */
+function joinPath(...parts) {
+  return parts
+    .filter(Boolean)
+    .join("/")
+    .replace(/\/+/g, "/");
+}
+
+function looksLikePath(s) {
+  return typeof s === "string" && s.includes("/");
+}
+
+/**
+ * catalog v2 を「従来cityオブジェクト互換」に展開して返す
+ * - pref.base, city.base, tileDirs, districts.base を解釈
+ * - 旧式の city.tiles がある場合はそれを優先（互換）
+ */
+function normalizeCity(prefKey, cityKey, rawCity) {
+  const pref = CATALOG?.[prefKey] || {};
+  const prefBase = pref.base || joinPath("data", prefKey);
+  const cityBase = rawCity.base || cityKey;
+  const cityRoot = joinPath(prefBase, cityBase);
+
+  // cityMask：相対(ファイル名のみ)なら cityRoot から結合
+  const cityMask = looksLikePath(rawCity.cityMask)
+    ? rawCity.cityMask
+    : joinPath(cityRoot, rawCity.cityMask);
+
+  // tiles：旧式tilesがあればそれをそのまま採用。なければtileDirsから生成
+  const tiles = {};
+  if (rawCity.tiles && typeof rawCity.tiles === "object") {
+    Object.assign(tiles, rawCity.tiles);
+  } else if (rawCity.tileDirs && typeof rawCity.tileDirs === "object") {
+    Object.entries(rawCity.tileDirs).forEach(([k, dir]) => {
+      tiles[k] = joinPath(cityRoot, dir, "{z}/{x}/{y}.png");
+    });
+  }
+
+  // districts：boundary/points がファイル名だけなら cityRoot/地区base から結合
+  const districts = (rawCity.districts || []).map((d) => {
+    const dBase = d.base || d.key;
+    const dRoot = joinPath(cityRoot, dBase);
+
+    const boundary = d.boundary
+      ? (looksLikePath(d.boundary) ? d.boundary : joinPath(dRoot, d.boundary))
+      : null;
+
+    const points = d.points
+      ? (looksLikePath(d.points) ? d.points : joinPath(dRoot, d.points))
+      : null;
+
+    return { ...d, boundary, points };
+  });
+
+  return {
+    ...rawCity,
+    cityMask,
+    tiles,
+    districts
+  };
+}
+
+/* =========================================================
    5) マスク付きタイルレイヤ（ECODRR）
 ========================================================= */
 const tileLayers = {
@@ -230,8 +295,6 @@ Object.entries(layerDefs).forEach(([key, ids]) => {
     if (chk.checked) {
       lay.addTo(map);
       applyAll();
-
-      // 保険：ECODRRタイルを前に
       if (lay.bringToFront) lay.bringToFront();
     } else {
       map.removeLayer(lay);
@@ -400,72 +463,76 @@ function addDistrictRow(cityKey, dist) {
 
   // 区境（線）→ districtPane（最上：B）
   // ★重要：interactive:false でクリックを奪わない（ポイントが反応する）
-  fetch(dist.boundary, { cache: "no-store" })
-    .then((r) => r.json())
-    .then((js) => {
-      if (state.boundaryLayer) map.removeLayer(state.boundaryLayer);
+  if (dist.boundary) {
+    fetch(dist.boundary, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((js) => {
+        if (state.boundaryLayer) map.removeLayer(state.boundaryLayer);
 
-      state.boundaryLayer = L.geoJSON(js, {
-        pane: "districtPane",
-        interactive: false,          // ←これがポイント
-        bubblingMouseEvents: false,  // 保険
-        style: { color: "#ff0066", weight: 3, fillOpacity: 0 }
-      }).addTo(map);
+        state.boundaryLayer = L.geoJSON(js, {
+          pane: "districtPane",
+          interactive: false,
+          bubblingMouseEvents: false,
+          style: { color: "#ff0066", weight: 3, fillOpacity: 0 }
+        }).addTo(map);
 
-      state.boundaryBounds = state.boundaryLayer.getBounds();
-      state.boundaryLayer.bringToFront();
-    })
-    .catch((e) => console.warn("boundary 読み込み失敗:", dist.boundary, e));
+        state.boundaryBounds = state.boundaryLayer.getBounds();
+        state.boundaryLayer.bringToFront();
+      })
+      .catch((e) => console.warn("boundary 読み込み失敗:", dist.boundary, e));
+  }
 
   // ポイント → pointsPane（線より下）
-  fetch(dist.points, { cache: "no-store" })
-    .then((r) => r.json())
-    .then((js) => {
-      if (state.pointsLayer) map.removeLayer(state.pointsLayer);
+  if (dist.points) {
+    fetch(dist.points, { cache: "no-store" })
+      .then((r) => r.json())
+      .then((js) => {
+        if (state.pointsLayer) map.removeLayer(state.pointsLayer);
 
-      state.pointsLayer = L.geoJSON(js, {
-        pointToLayer: (f, latlng) => {
-          const col = (pointMode === "ec") ? ecColor(f.properties?.EC) : monoColor;
+        state.pointsLayer = L.geoJSON(js, {
+          pointToLayer: (f, latlng) => {
+            const col = (pointMode === "ec") ? ecColor(f.properties?.EC) : monoColor;
 
-          const marker = L.circleMarker(latlng, {
-            pane: "pointsPane",
-            radius: pointSize,
-            fillColor: col,
-            color: "#000",
-            weight: 1,
-            fillOpacity: 0.9
-          });
+            const marker = L.circleMarker(latlng, {
+              pane: "pointsPane",
+              radius: pointSize,
+              fillColor: col,
+              color: "#000",
+              weight: 1,
+              fillOpacity: 0.9
+            });
 
-          // A：ポップアップにボタン
-          marker.bindPopup(buildDiagnosisPopupHtml(f, dist.points));
+            // A：ポップアップにボタン
+            marker.bindPopup(buildDiagnosisPopupHtml(f, dist.points));
 
-          // Tooltip（任意）
-          const fid = f.properties?.field_id ?? "";
-          const place = f.properties?.["場所名"] ?? "";
-          marker.bindTooltip(`${fid} ${place}`.trim(), { direction: "top" });
+            // Tooltip（任意）
+            const fid = f.properties?.field_id ?? "";
+            const place = f.properties?.["場所名"] ?? "";
+            marker.bindTooltip(`${fid} ${place}`.trim(), { direction: "top" });
 
-          // B：Shift/Ctrl/⌘クリックで直接開く
-          marker.on("click", (ev) => {
-            const oe = ev?.originalEvent;
-            const modifier = oe && (oe.shiftKey || oe.ctrlKey || oe.metaKey);
-            if (modifier) openDiagnosisInNewTab(f, dist.points);
-          });
+            // B：Shift/Ctrl/⌘クリックで直接開く
+            marker.on("click", (ev) => {
+              const oe = ev?.originalEvent;
+              const modifier = oe && (oe.shiftKey || oe.ctrlKey || oe.metaKey);
+              if (modifier) openDiagnosisInNewTab(f, dist.points);
+            });
 
-          // B：ダブルクリックで直接開く（ズーム抑止）
-          marker.on("dblclick", (ev) => {
-            const oe = ev?.originalEvent;
-            if (oe) L.DomEvent.stop(oe);
-            openDiagnosisInNewTab(f, dist.points);
-          });
+            // B：ダブルクリックで直接開く（ズーム抑止）
+            marker.on("dblclick", (ev) => {
+              const oe = ev?.originalEvent;
+              if (oe) L.DomEvent.stop(oe);
+              openDiagnosisInNewTab(f, dist.points);
+            });
 
-          return marker;
-        }
-      });
+            return marker;
+          }
+        });
 
-      if (pointsToggle.checked) state.pointsLayer.addTo(map);
-      bringDistrictToFront();
-    })
-    .catch((e) => console.warn("points 読み込み失敗:", dist.points, e));
+        if (pointsToggle.checked) state.pointsLayer.addTo(map);
+        bringDistrictToFront();
+      })
+      .catch((e) => console.warn("points 読み込み失敗:", dist.points, e));
+  }
 
   boundaryToggle.addEventListener("change", () => {
     const lay = state.boundaryLayer;
@@ -538,11 +605,13 @@ function selectCity(cityKey) {
   currentCity = cityKey;
   renderCityTabs();
 
-  const city = CATALOG[currentPref].cities[cityKey];
-  if (!city) return;
+  const rawCity = CATALOG[currentPref].cities[cityKey];
+  if (!rawCity) return;
+
+  // ★ v2 正規化（ここが肝）
+  const city = normalizeCity(currentPref, cityKey, rawCity);
 
   map.setView(city.center, city.zoom);
-
   setTilesUIEnabled(false);
 
   fetch(city.cityMask, { cache: "no-store" })
@@ -550,16 +619,19 @@ function selectCity(cityKey) {
     .then((geo) => {
       cityMaskGeo = geo;
 
+      // マスク適用
       Object.values(tileLayers).forEach((l) => l.setMask(cityMaskGeo, map));
 
-      tileLayers.twi.setUrl(city.tiles.twi);
-      tileLayers.hand.setUrl(city.tiles.hand);
-      tileLayers.tikei.setUrl(city.tiles.tikei);
-      tileLayers.keikan.setUrl(city.tiles.keikan);
-      tileLayers.suiden.setUrl(city.tiles.suiden);
+      // タイルURLセット（v2ではtileDirsから生成済み）
+      tileLayers.twi.setUrl(city.tiles.twi || "");
+      tileLayers.hand.setUrl(city.tiles.hand || "");
+      tileLayers.tikei.setUrl(city.tiles.tikei || "");
+      tileLayers.keikan.setUrl(city.tiles.keikan || "");
+      tileLayers.suiden.setUrl(city.tiles.suiden || "");
 
       setTilesUIEnabled(true);
 
+      // UI状態に従い表示更新
       Object.entries(layerDefs).forEach(([key, ids]) => {
         const chk = document.getElementById(ids.chk);
         const op = document.getElementById(ids.op);
@@ -612,3 +684,4 @@ fetch("./data/catalog.json", { cache: "no-store" })
     selectPref(firstPref);
   })
   .catch((e) => console.error("catalog.json の読み込みに失敗:", e));
+``
