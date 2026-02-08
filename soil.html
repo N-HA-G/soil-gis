@@ -87,7 +87,7 @@
       <canvas id="radarChart" width="380" height="380"></canvas>
     </div>
 
-    <div class="card full" style="grid-column: 1 / -1;">
+    <div class="card" style="grid-column: 1 / -1;">
       <h2>メモ（編集可能：localStorage保存）</h2>
       <div id="memoView">
         <div><b>固定説明：</b><span id="fixedDescView"></span></div>
@@ -122,7 +122,9 @@
     <div id="analysisWrap"></div>
   </details>
 
-  https://cdn.jsdelivr.net/npm/chart.js</script>
+  <!-- Chart.js -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
   <script>
     const params = new URLSearchParams(location.search);
     const id = params.get("id");
@@ -144,7 +146,7 @@
       return "★".repeat(k) + "☆".repeat(5-k);
     }
 
-    // 仮ランク：ECでざっくり（後で閾値を一緒に決めよう）
+    // 仮ランク（例：ECでざっくり）
     function calcRank(p){
       const ec = Number(p?.EC);
       if (!Number.isFinite(ec)) return "—";
@@ -152,7 +154,8 @@
       if (ec >= 0.10) return "C";
       return "C";
     }
-    // 仮スコア：EC/pH/CEC
+
+    // 仮スコア
     function calcScores(p){
       const ec  = Number(p?.EC);
       const ph  = Number(p?.pH);
@@ -171,14 +174,13 @@
       Object.entries(props || {}).forEach(([k,v])=>{
         const tr=document.createElement("tr");
         const th=document.createElement("th"); th.textContent=k;
-        const td=document.createElement("td"); td.textContent=(v ?? "");
+        const td=document.createElement("td"); td.textContent=String(v ?? "");
         tr.append(th,td);
         table.append(tr);
       });
       return table;
     }
 
-    // localStorage保存（idごと）
     function loadMemo(fieldId){
       try{
         const raw = localStorage.getItem("soilMemo:"+fieldId);
@@ -215,6 +217,7 @@
         document.body.innerHTML = `<div class="warn">ID <code>${id}</code> が見つかりません（src=${src}）。</div>`;
         return;
       }
+
       render(featureList[currentIndex]);
       setupNavButtons();
     }
@@ -249,9 +252,9 @@
       document.getElementById("kpH").textContent   = (p.pH ?? "-");
       document.getElementById("kCEC").textContent  = (p.CEC ?? "-");
       document.getElementById("kDate").textContent = (p["採取日"] ?? "-");
-      document.getElementById("kCoord").textContent = (Number.isFinite(lat) && Number.isFinite(lon)) ? `${lat.toFixed(6)}, ${lon.toFixed(6)}` : "-";
+      document.getElementById("kCoord").textContent =
+        (Number.isFinite(lat) && Number.isFinite(lon)) ? `${lat.toFixed(6)}, ${lon.toFixed(6)}` : "-";
 
-      // 一言（課題があればそれを優先、なければ自動生成）
       const auto = (() => {
         const ec = Number(p.EC);
         const ph = Number(p.pH);
@@ -281,7 +284,6 @@
       document.getElementById("issueInput").value     = issue;
       document.getElementById("solutionInput").value  = solution;
 
-      // ランク＆スコア
       const rank = calcRank(p);
       const rankBadge = document.getElementById("rankBadge");
       rankBadge.textContent = `${rank}ランク（仮）`;
@@ -293,7 +295,6 @@
       document.getElementById("environment").textContent = star(scores.environment);
       document.getElementById("safety").textContent      = star(scores.safety);
 
-      // レーダー更新
       const ctx = document.getElementById("radarChart");
       if (radarChart) radarChart.destroy();
       radarChart = new Chart(ctx, {
@@ -314,12 +315,10 @@
         }
       });
 
-      // すべての属性
       const wrap = document.getElementById("analysisWrap");
       wrap.innerHTML = "";
       wrap.appendChild(renderPropsTable(p));
 
-      // 編集トグル＆保存
       const editToggle = document.getElementById("editToggle");
       const saveBtn = document.getElementById("saveBtn");
       const memoEdit = document.getElementById("memoEdit");
@@ -340,7 +339,6 @@
           solution: document.getElementById("solutionInput").value
         };
         saveMemo(p.field_id || id, newMemo);
-        // 再描画
         render(f);
         alert("保存しました（この端末のブラウザに保存されます）");
       };
