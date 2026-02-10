@@ -19,3 +19,30 @@
             └─ Oota/ ←地区レベル
                 ├─ chichibuoota.geojson     ← 区境（線で表示）(太田地区)
                 └─ soil_points.geojson      ← 調査地点・測定結果
+
+
+------------------------------------------------------------------------------------------------------
+
+soil-gis/
+├─ index.html                        ← 地図（Leaflet）トップ
+├─ soil.html                         ← 診断ページ（チャートなし・2行パッチ入り）
+├─ assets/
+│  ├─ css/
+│  │   └─ style.css                 ← 共通スタイル（必要最低限）
+│  └─ js/
+│      └─ app.js                    ← Leaflet地図ロジック
+└─ data/
+   ├─ standard_data/
+   │   ├─ standards.json            ← 基準（目安）と出典
+   │   └─ field_notes.json          ← 最上部の説明（任意）
+   └─ Saitama/
+      └─ Chichibu/
+         └─ Oota/
+            ├─ soil_points.geojson  ← あなたのデータ
+            └─ image/               ← 画像 (F001.png など)
+               ├─ F001.png
+               ├─ F002.png
+               ├─ F003.jpg
+               ├─ F004.jpg
+               ├─ F005.jpg
+               └─ F006.jpg
