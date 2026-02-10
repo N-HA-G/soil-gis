@@ -1,6 +1,6 @@
 /                       ← GitHub Pages ルート（この階層に index.html）
 ├─ index.html ←メイン
-├─soil.html ←Dashboardの中身
+├─soil.html ←Dashboard(測定結果表示)の中身
 ├─ assets/
 │   ├─ css/style.css ←GISのレイヤーパネル
 │   └─ js/
@@ -16,6 +16,6 @@
             ├─ 03_Tikei_chichibu/{z}/{x}/{y}.png ←ECODRRデータ
             ├─ 04_Keikan_chichibu/{z}/{x}/{y}.png ←ECODRRデータ
             ├─ 05_Suiden_chichibu/{z}/{x}/{y}.png ←ECODRRデータ
-            └─ Oota/
+            └─ Oota/ ←地区レベル
                 ├─ chichibuoota.geojson     ← 区境（線で表示）(太田地区)
                 └─ soil_points.geojson      ← 調査地点・測定結果
