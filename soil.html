@@ -467,6 +467,20 @@
         table.append(thead,tb); return table;
       })());
 
+<!-- 参考情報（水質系・パックテスト） -->
+<div class="card" id="waterCard" style="margin-top:12px; display:none;">
+  <h2>参考情報（水質系・パックテスト）</h2>
+  <table class="eval-table" id="waterTable">
+    <thead>
+      <tr><th>項目</th><th>値</th><th>備考</th></tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+  <div class="muted" style="margin-top:6px;">
+    ※ 単位はいずれも <b>mg/L</b>、参考表示（パックテスト値）
+  </div>
+</div>
+
       // 画像（ギャラリー）
       const baseDir = dirOf(src);
       const gallery = $("gallery"); gallery.innerHTML="";

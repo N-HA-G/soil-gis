@@ -22,12 +22,11 @@
         "有機物量": "",
         "土壌微生物多様性・活性値(BIOTREX)": 1149019,
         "主な課題": "",
-        "改善策": ""
+        "改善策": "",
+        "NO3-N (mg/L)": 0.2,
+        "NH4-N (mg/L)": 0.5
       },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [139.066274, 36.054016]
-      }
+      "geometry": { "type": "Point", "coordinates": [139.066274, 36.054016] }
     },
     {
       "type": "Feature",
@@ -49,12 +48,11 @@
         "有機物量": "",
         "土壌微生物多様性・活性値(BIOTREX)": 981812,
         "主な課題": "",
-        "改善策": ""
+        "改善策": "",
+        "NO3-N (mg/L)": 0.2,
+        "NH4-N (mg/L)": 0.5
       },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [139.06858, 36.057015]
-      }
+      "geometry": { "type": "Point", "coordinates": [139.06858, 36.057015] }
     },
     {
       "type": "Feature",
@@ -76,12 +74,13 @@
         "有機物量": "",
         "土壌微生物多様性・活性値(BIOTREX)": null,
         "主な課題": "",
-        "改善策": ""
+        "改善策": "",
+        "COD (mg/L)": 4,
+        "PO4-P (mg/L)": 0.5,
+        "NO3-N (mg/L)": 0.2,
+        "NH4-N (mg/L)": 0.5
       },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [139.068930556, 36.059280556]
-      }
+      "geometry": { "type": "Point", "coordinates": [139.068930556, 36.059280556] }
     },
     {
       "type": "Feature",
@@ -103,12 +102,13 @@
         "有機物量": "",
         "土壌微生物多様性・活性値(BIOTREX)": null,
         "主な課題": "",
-        "改善策": ""
+        "改善策": "",
+        "COD (mg/L)": 2,
+        "PO4-P (mg/L)": 0.02,
+        "NO3-N (mg/L)": 0.2,
+        "NH4-N (mg/L)": 0.5
       },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [139.069788889, 36.059866667]
-      }
+      "geometry": { "type": "Point", "coordinates": [139.069788889, 36.059866667] }
     },
     {
       "type": "Feature",
@@ -130,12 +130,13 @@
         "有機物量": "",
         "土壌微生物多様性・活性値(BIOTREX)": null,
         "主な課題": "",
-        "改善策": ""
+        "改善策": "",
+        "COD (mg/L)": 4,
+        "PO4-P (mg/L)": 0.5,
+        "NO3-N (mg/L)": 0.2,
+        "NH4-N (mg/L)": 0.5
       },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [139.069683333, 36.060291667]
-      }
+      "geometry": { "type": "Point", "coordinates": [139.069683333, 36.060291667] }
     },
     {
       "type": "Feature",
@@ -157,12 +158,14 @@
         "有機物量": "",
         "土壌微生物多様性・活性値(BIOTREX)": null,
         "主な課題": "",
-        "改善策": ""
+        "改善策": "",
+        "COD (mg/L)": 2,
+        "PO4-P (mg/L)": 0.02,
+        "NO3-N (mg/L)": 0.2,
+        "NH4-N (mg/L)": 0.5
       },
-      "geometry": {
-        "type": "Point",
-        "coordinates": [139.068797222, 36.059352778]
-      }
+      "geometry": { "type": "Point", "coordinates": [139.068797222, 36.059352778] }
     }
   ]
 }
+``
