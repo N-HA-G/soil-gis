@@ -18,6 +18,12 @@
       "title": "土壌分析結果の評価と改良対策（岡山県）",
       "publisher": "岡山県",
       "url": "https://www.pref.okayama.jp/uploaded/life/423596_2722883_misc.pdf"
+    },
+    {
+      "id": "dgc_biotrex",
+      "title": "土壌微生物多様性・活性値（BIOTREX）評価資料",
+      "publisher": "DGCテクノロジー",
+      "url": "http://www.dgc.co.jp"
     }
   ],
   "standards": {
@@ -27,15 +33,28 @@
       "cec":   { "ok_min": 10,     "warn_min": 8,      "source": "okayama_targets" },
       "cn":    { "ok": [10, 15],   "warn": [8, 20],    "source": "zennoh_guide" },
       "om":    { "ok_min": 2.0,    "warn_min": 1.5,    "source": "okayama_targets" },
-      "biotex":{ "ok_min": 500000, "warn_min": 200000, "source": "zennoh_guide" }
+
+      /* ★ ここだけ更新（PDF 基準に合わせた最重要部分） */
+      "biotex":{ 
+        "ok_min": 700000,     /* 70万〜「土作り良好」＆100万〜「豊か」含む */
+        "warn_min": 300000,   /* 30万〜「農薬過多／病気が出やすい」帯 */
+        "source": "dgc_biotrex"
+      }
     },
+
     "paddy": {
       "ph":    { "ok": [5.5, 6.5], "warn": [5.0, 7.5], "source": "maff_miyazaki_1997" },
       "ec":    { "ok_max": 0.50,   "warn_max": 0.80,   "source": "okayama_targets" },
       "cec":   { "ok_min": 8,      "warn_min": 8,      "source": "okayama_targets" },
       "cn":    { "ok": [10, 15],   "warn": [8, 20],    "source": "zennoh_guide" },
       "om":    { "ok_min": 2.0,    "warn_min": 1.5,    "source": "okayama_targets" },
-      "biotex":{ "ok_min": 500000, "warn_min": 200000, "source": "zennoh_guide" }
+
+      /* ★ upland と同じ基準で問題なし（作目影響は PDF に記載なし） */
+      "biotex":{ 
+        "ok_min": 700000,
+        "warn_min": 300000,
+        "source": "dgc_biotrex"
+      }
     }
   }
 }
