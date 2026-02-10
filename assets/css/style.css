@@ -375,12 +375,3 @@ textarea { resize: vertical; }
 /* Leafletのコントロールを常に前面に */
 .leaflet-top, .leaflet-bottom { z-index: 3000; }
 .leaflet-control { z-index: 3001; }
-
-
-/* === ECO‑DRR を載せる pane を常に最前面へ（JSでも指定しているが保険で） === */
-.leaflet-pane.ecodrrPane {
-  z-index: 650 !important;
-}
-
-/* もし既存で別 pane に pointer-events: none を当てているなら、
-   クラス名の衝突で ECO‑DRR までクリック不可にならないよう注意 */
