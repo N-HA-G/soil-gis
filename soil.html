@@ -12,15 +12,20 @@
       --shadow:0 2px 8px rgba(0,0,0,.06); --radius:12px;
     }
     html,body{margin:0;padding:0}
-    body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.7;
-         padding:16px; max-width:1100px; margin:0 auto; color:var(--c-text); background:#f7f7f8;}
-    a{color:var(--c-brand); text-decoration:none;} 
-    a:hover{text-decoration:underline;}
+    body{
+      font-family:system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.7;
+      padding:16px; max-width:1100px; margin:0 auto; color:var(--c-text); background:#f7f7f8;
+    }
+    a{color:var(--c-brand); text-decoration:none;} a:hover{text-decoration:underline;}
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
-    .topbar{display:flex; gap:10px; align-items:center; justify-content:space-between;
-            margin-bottom:14px; flex-wrap:wrap;}
-    .pill{display:inline-flex; align-items:center; gap:6px; background:#f1f3f5;
-          border-radius:999px; padding:2px 10px; font-size:12px; color:var(--c-sub);}
+    .topbar{
+      display:flex; gap:10px; align-items:center; justify-content:space-between;
+      margin-bottom:14px; flex-wrap:wrap;
+    }
+    .pill{
+      display:inline-flex; align-items:center; gap:6px; background:#f1f3f5;
+      border-radius:999px; padding:2px 10px; font-size:12px; color:var(--c-sub);
+    }
     .btn{border:1px solid #ddd; background:#fafafa; padding:6px 10px; border-radius:8px; cursor:pointer;}
     .btn:hover{background:#f0f0f0;}
     .btn.primary{border-color:var(--c-brand); background:var(--c-brand); color:#fff;}
@@ -36,18 +41,13 @@
     .k label{display:block; font-size:12px; color:var(--c-sub);}
     .k b{font-size:20px;}
     .eval-table{width:100%; border-collapse:collapse;}
-    .eval-table th,.eval-table td{border-bottom:1px solid var(--c-border);
-                                 padding:6px 8px; text-align:left;}
+    .eval-table th,.eval-table td{border-bottom:1px solid var(--c-border); padding:6px 8px; text-align:left;}
     .chip{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; color:#fff;}
-    .chip.ok{background:var(--c-ok);}
-    .chip.warn{background:var(--c-warn); color:#000;}
-    .chip.bad{background:var(--c-bad);}
+    .chip.ok{background:var(--c-ok);} .chip.warn{background:var(--c-warn); color:#000;} .chip.bad{background:var(--c-bad);}
     .gallery{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
-    .gallery img{width:100%; height:180px; object-fit:cover; border-radius:8px;
-                 border:1px solid var(--c-border); box-shadow:var(--shadow);}
+    .gallery img{width:100%; height:180px; object-fit:cover; border-radius:8px; border:1px solid var(--c-border); box-shadow:var(--shadow);}
     .warn{background:#fff3cd; border:1px solid #ffeeba; padding:10px; border-radius:10px;}
-    .summary-top{background:#fff; border-left:5px solid var(--c-brand); padding:10px 12px;
-                 border-radius:8px; box-shadow:var(--shadow);}
+    .summary-top{background:#fff; border-left:5px solid var(--c-brand); padding:10px 12px; border-radius:8px; box-shadow:var(--shadow);}
   </style>
 </head>
 <body>
@@ -73,7 +73,7 @@
     </div>
   </div>
 
-  <!-- 最終地点の説明 -->
+  <!-- 最上部説明 -->
   <div id="summaryTop" class="summary-top" style="display:none; margin-bottom:12px;"></div>
 
   <h1 id="fieldName" style="margin:6px 0;"></h1>
@@ -118,19 +118,19 @@
     <div id="memoEdit" style="display:none; margin-top:10px;">
       <div style="margin-bottom:8px;">
         <div style="font-weight:700; margin-bottom:4px;">固定説明</div>
-        <input type="text" id="fixedDescInput">
+        <input type="text" id="fixedDescInput" placeholder="例：地形・土地利用の説明など">
       </div>
       <div style="margin-bottom:8px;">
         <div style="font-weight:700; margin-bottom:4px;">評価</div>
-        <input type="text" id="evalInput">
+        <input type="text" id="evalInput" placeholder="例：良 / 普通 / 要改善">
       </div>
       <div style="margin-bottom:8px;">
         <div style="font-weight:700; margin-bottom:4px;">主な課題</div>
-        <textarea id="issueInput" rows="3"></textarea>
+        <textarea id="issueInput" rows="3" placeholder="主な課題を記入"></textarea>
       </div>
       <div>
         <div style="font-weight:700; margin-bottom:4px;">改善策</div>
-        <textarea id="solutionInput" rows="3"></textarea>
+        <textarea id="solutionInput" rows="3" placeholder="改善策を記入"></textarea>
       </div>
     </div>
   </div>
@@ -161,13 +161,11 @@
   </details>
 
   <script>
-    /* JS：※ チャート部分は完全に削除済み（描画なし） */
-
+    /* Utility */
     const $ = id => document.getElementById(id);
     const num = x => { const n = Number(x); return Number.isFinite(n) ? n : NaN; };
     const fmt = (v, d=2) => Number.isFinite(v) ? v.toFixed(d) : "—";
     async function copyText(t){ try{await navigator.clipboard.writeText(t);}catch{} }
-
     function jsonToCsv(obj){
       const keys=Object.keys(obj);
       const vals=keys.map(k=>`"${String(obj[k]??"").replace(/"/g,'""')}"`);
@@ -180,126 +178,141 @@
       setTimeout(()=>URL.revokeObjectURL(a.href),500);
     }
 
-    const params=new URLSearchParams(location.search);
-    const pointId=params.get("id");
-    const src=params.get("src") || "data/Saitama/Chichibu/Oota/soil_points.geojson";
+    /* URL params (★2行パッチの1つ目：srcを必ずdecode) */
+    const params = new URLSearchParams(location.search);
+    const pointId = params.get("id");
+    const src = (() => {
+      const raw = params.get("src");
+      return raw ? decodeURIComponent(raw) : "data/Saitama/Chichibu/Oota/soil_points.geojson";
+    })();
 
-    $("idPill").textContent=`ID: ${pointId}`;
-    $("srcPill").textContent=`src: ${src}`;
+    $("idPill").textContent = `ID: ${pointId ?? "-"}`;
+    $("srcPill").textContent = `src: ${src}`;
 
-    let featureList=[], currentIndex=-1;
-    let STANDARDS=null, SOURCES=[];
+    /* State */
+    let featureList = []; let currentIndex = -1;
+    let STANDARDS = null; let SOURCES = [];
 
     main();
 
     async function main(){
       if(!pointId){
-        document.body.innerHTML="<div class='warn'>ID が指定されていません。</div>"; return;
+        document.body.innerHTML = "<div class='warn'>ID が指定されていません。</div>"; return;
       }
 
+      /* standards.json（任意） */
       try{
-        const s=await fetch("data/standard_data/standards.json");
+        const s=await fetch("data/standard_data/standards.json",{cache:"no-store"});
         if(s.ok){
           const j=await s.json();
-          STANDARDS=j;
-          SOURCES=j.sources||[];
-          $("landuse").value=j.meta?.default_landuse||"paddy";
+          STANDARDS=j; SOURCES=j.sources||[];
+          $("landuse").value=j.meta?.default_landuse || "paddy";
         }
       }catch{}
 
-      const res=await fetch(src);
-      const fc=await res.json();
-      featureList=fc.features||[];
-      currentIndex=featureList.findIndex(f=>String(f.properties?.field_id)===String(pointId));
-
-      if(currentIndex<0){
-        document.body.innerHTML="<div class='warn'>ID が見つかりません。</div>"; return;
+      /* GeoJSON */
+      try{
+        const r = await fetch(src, {cache:"no-store"});
+        if(!r.ok) throw new Error(r.status+" "+r.statusText);
+        const fc = await r.json();
+        featureList = fc.features || [];
+      }catch(e){
+        document.body.innerHTML = `<div class='warn'>GeoJSONが読み込めません：<code>${src}</code><br>${String(e)}</div>`;
+        return;
       }
 
-      $("prevBtn").onclick=()=>{
-        if(currentIndex>0){
-          const id=featureList[currentIndex-1].properties.field_id;
-          location.href=`soil.html?id=${id}&src=${src}`;
-        }
-      };
-      $("nextBtn").onclick=()=>{
-        if(currentIndex<featureList.length-1){
-          const id=featureList[currentIndex+1].properties.field_id;
-          location.href=`soil.html?id=${id}&src=${src}`;
-        }
-      };
-      $("copyLinkBtn").onclick=()=>copyText(location.href);
+      currentIndex = featureList.findIndex(f => String(f?.properties?.field_id) === String(pointId));
+      if(currentIndex < 0){
+        document.body.innerHTML = `<div class='warn'>ID <code>${pointId}</code> が見つかりません。</div>`;
+        return;
+      }
 
-      $("landuse").onchange=()=>render(featureList[currentIndex]);
+      /* nav */
+      $("prevBtn").onclick = ()=>{
+        if(currentIndex>0){
+          const fid = featureList[currentIndex-1].properties.field_id;
+          location.href = `soil.html?id=${encodeURIComponent(fid)}&src=${encodeURIComponent(src)}`;
+        }
+      };
+      $("nextBtn").onclick = ()=>{
+        if(currentIndex<featureList.length-1){
+          const fid = featureList[currentIndex+1].properties.field_id;
+          location.href = `soil.html?id=${encodeURIComponent(fid)}&src=${encodeURIComponent(src)}`;
+        }
+      };
+      $("copyLinkBtn").onclick = ()=>copyText(location.href);
+      $("landuse").onchange = ()=>render(featureList[currentIndex]);
 
       render(featureList[currentIndex]);
     }
 
     function getStd(){
-      const lu=$("landuse").value;
+      const lu = $("landuse").value;
       return STANDARDS?.standards?.[lu] || null;
     }
-
     function addRow(tbody, label, v, stdText, judge){
       const tr=document.createElement("tr");
       tr.innerHTML=`
         <td>${label}</td>
-        <td>${v??"—"}</td>
-        <td>${stdText||"—"}</td>
+        <td>${v ?? "—"}</td>
+        <td>${stdText || "—"}</td>
         <td><span class="chip ${judge.class||""}">${judge.label}</span></td>
         <td>${judge.comment||""}</td>
       `;
       tbody.appendChild(tr);
     }
-
     function judgeRange(value, std, type){
       if(!Number.isFinite(value)) return {label:"—", class:"", comment:"値なし"};
       if(!std) return {label:"—", class:"", comment:"基準なし"};
 
       if(type==="ph"){
-        const ok=std.ok||[5.5,6.5], w=std.warn||[5.0,7.5];
-        if(value>=ok[0] && value<=ok[1]) return{label:"良",class:"ok",comment:"適正"};
-        if(value>=w[0] && value<=w[1]) return{label:"注意",class:"warn",comment:"やや外れ"};
-        return{label:"要改善",class:"bad",comment:"適正域外"};
+        const ok = std.ok||[5.5,6.5], w=std.warn||[5.0,7.5];
+        if(value>=ok[0] && value<=ok[1]) return {label:"良", class:"ok", comment:"適正"};
+        if(value>=w[0] && value<=w[1]) return {label:"注意", class:"warn", comment:"やや外れ"};
+        return {label:"要改善", class:"bad", comment:"適正域外"};
       }
       if(type==="ec"){
         const o=std.ok_max??0.5, w=std.warn_max??0.8;
-        if(value<=o) return{label:"良",class:"ok",comment:"正常"};
-        if(value<=w) return{label:"注意",class:"warn",comment:"やや高い"};
-        return{label:"要改善",class:"bad",comment:"高い"};
+        if(value<=o) return {label:"良", class:"ok", comment:"正常"};
+        if(value<=w) return {label:"注意", class:"warn", comment:"やや高い"};
+        return {label:"要改善", class:"bad", comment:"高い"};
       }
       if(type==="cec"){
         const o=std.ok_min??10, w=std.warn_min??8;
-        if(value>=o) return{label:"良",class:"ok",comment:"十分"};
-        if(value>=w) return{label:"注意",class:"warn",comment:"やや低い"};
-        return{label:"要改善",class:"bad",comment:"低い"};
+        if(value>=o) return {label:"良", class:"ok", comment:"十分"};
+        if(value>=w) return {label:"注意", class:"warn", comment:"やや低い"};
+        return {label:"要改善", class:"bad", comment:"低い"};
       }
-      return{label:"—",class:"",comment:""};
+      return {label:"—", class:"", comment:""};
     }
 
-    function dirOf(p){ return p.substring(0,p.lastIndexOf("/")); }
+    /* ★2行パッチの2つ目：dirOfでdecodeする（保険） */
+    function dirOf(url){
+      const u = decodeURIComponent(url);
+      return u.substring(0, u.lastIndexOf("/"));
+    }
 
     function guessImages(baseDir, fid){
-      const ex=["png","jpg","jpeg","webp"];
+      const exts=["png","jpg","jpeg","webp"];
       const out=[];
-      ex.forEach(e=>out.push(`${baseDir}/image/${fid}.${e}`));
-      for(let i=1;i<=6;i++) ex.forEach(e=>out.push(`${baseDir}/image/${fid}_${i}.${e}`));
-      for(let i=1;i<=6;i++) ex.forEach(e=>out.push(`${baseDir}/image/${fid}-${i}.${e}`));
+      // 単体
+      exts.forEach(e=>out.push(`${baseDir}/image/${fid}.${e}`));
+      // 連番（_ / -）
+      for(let i=1;i<=6;i++) exts.forEach(e=>out.push(`${baseDir}/image/${fid}_${i}.${e}`));
+      for(let i=1;i<=6;i++) exts.forEach(e=>out.push(`${baseDir}/image/${fid}-${i}.${e}`));
       return out;
     }
 
     async function render(f){
       const p=f.properties||{};
-      const [lon,lat]=f.geometry.coordinates||[];
+      const [lon,lat]=f.geometry?.coordinates||[];
 
-      let topNote=p["最終地点の説明"] || p["固定説明"] || "";
+      // 最上部説明
+      let topNote = p["最終地点の説明"] || p["固定説明"] || "";
       if(!topNote){
         try{
-          const r=await fetch("data/standard_data/field_notes.json");
-          if(r.ok){
-            const notes=await r.json();
-            topNote=notes[p.field_id]||"";
-          }
+          const r=await fetch("data/standard_data/field_notes.json",{cache:"no-store"});
+          if(r.ok){ const notes=await r.json(); topNote = notes[p.field_id] || ""; }
         }catch{}
       }
       if(topNote){
@@ -307,37 +320,39 @@
         $("summaryTop").textContent=topNote;
       }
 
-      $("fieldName").textContent=p.field_id;
-      $("location").textContent=p["場所名"]||"";
+      $("fieldName").textContent=p.field_id || pointId;
+      $("location").textContent=p["場所名"] || "";
 
-      const CN=(Number.isFinite(num(p.C))&&Number.isFinite(num(p.N))&&num(p.N)!==0)?num(p.C)/num(p.N):NaN;
-
-      $("kEC").textContent=p.EC??"-";
-      $("kpH").textContent=p.pH??"-";
-      $("kCEC").textContent=p.CEC??"-";
+      // KPI
+      const CN = (Number.isFinite(num(p.C)) && Number.isFinite(num(p.N)) && num(p.N)!==0) ? num(p.C)/num(p.N) : NaN;
+      $("kEC").textContent=p.EC ?? "-";
+      $("kpH").textContent=p.pH ?? "-";
+      $("kCEC").textContent=p.CEC ?? "-";
       $("kCN").textContent=Number.isFinite(CN)?fmt(CN,1):"-";
-      $("kBio").textContent=p["土壌微生物多様性・活性値(BIOTREX)"]??"-";
+      $("kBio").textContent=p["土壌微生物多様性・活性値(BIOTREX)"] ?? "-";
 
-      $("oneLine").textContent="測定値に基づき管理方針を検討できます。";
+      // 一言
+      $("oneLine").textContent = "測定値に基づき管理方針を検討できます。";
 
-      const memoKey=`soilMemo:${src}#${p.field_id}`;
-      const memo=JSON.parse(localStorage.getItem(memoKey)||"{}");
+      // メモ
+      const memoKey = `soilMemo:${src}#${p.field_id || pointId}`;
+      const memo = (()=>{ try{ return JSON.parse(localStorage.getItem(memoKey)||"{}"); }catch{return{}} })();
+      $("fixedDescView").textContent = memo.fixedDesc || "（未入力）";
+      $("evalView").textContent      = memo.evalTxt   || "（未入力）";
+      $("issueView").textContent     = memo.issue     || "（未入力）";
+      $("solutionView").textContent  = memo.solution  || "（未入力）";
 
-      $("fixedDescView").textContent=memo.fixedDesc||"（未入力）";
-      $("evalView").textContent=memo.evalTxt||"（未入力）";
-      $("issueView").textContent=memo.issue||"（未入力）";
-      $("solutionView").textContent=memo.solution||"（未入力）";
-
-      $("fixedDescInput").value=memo.fixedDesc||"";
-      $("evalInput").value=memo.evalTxt||"";
-      $("issueInput").value=memo.issue||"";
-      $("solutionInput").value=memo.solution||"";
+      $("fixedDescInput").value = memo.fixedDesc || "";
+      $("evalInput").value      = memo.evalTxt   || "";
+      $("issueInput").value     = memo.issue     || "";
+      $("solutionInput").value  = memo.solution  || "";
 
       let editing=false;
       $("editToggle").onclick=()=>{
         editing=!editing;
         $("memoEdit").style.display=editing?"block":"none";
         $("saveBtn").style.display=editing?"inline-block":"none";
+        $("editToggle").textContent=editing?"閲覧":"編集";
       };
       $("saveBtn").onclick=()=>{
         const m={
@@ -346,48 +361,67 @@
           issue:$("issueInput").value,
           solution:$("solutionInput").value
         };
-        localStorage.setItem(memoKey,JSON.stringify(m));
+        localStorage.setItem(memoKey, JSON.stringify(m));
         render(f);
       };
 
-      const std=getStd();
-      const tbody=$("evalTable").querySelector("tbody");
-      tbody.innerHTML="";
+      // 標準値
+      const std = getStd();
+      const tbody = $("evalTable").querySelector("tbody"); tbody.innerHTML="";
+      addRow(tbody,"EC", p.EC,  "", judgeRange(num(p.EC),  std?.ec,  "ec"));
+      addRow(tbody,"pH", p.pH,  "", judgeRange(num(p.pH),  std?.ph,  "ph"));
+      addRow(tbody,"CEC",p.CEC, "", judgeRange(num(p.CEC), std?.cec, "cec"));
+      addRow(tbody,"C/N比", Number.isFinite(CN)?fmt(CN,1):"","", {label:"—",class:"",comment:""});
 
-      addRow(tbody,"EC",p.EC,"",judgeRange(num(p.EC),std?.ec,"ec"));
-      addRow(tbody,"pH",p.pH,"",judgeRange(num(p.pH),std?.ph,"ph"));
-      addRow(tbody,"CEC",p.CEC,"",judgeRange(num(p.CEC),std?.cec,"cec"));
-      addRow(tbody,"C/N比",Number.isFinite(CN)?fmt(CN,1):"","",{label:"—",class:"",comment:""});
+      // 簡易ランク
+      const rank = Number.isFinite(num(p.EC)) ? (num(p.EC)<=0.5?"A":(num(p.EC)<=0.8?"B":"C")) : "—";
+      $("rankBadge").textContent = `${rank}ランク`;
+      $("rankBadge").style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
 
-      const rank = (num(p.EC)<=0.5?"A":num(p.EC)<=0.8?"B":"C");
-      $("rankBadge").textContent=rank+"ランク";
-      $("rankBadge").style.background=(rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
+      // 便利ボタン
+      $("copyCoordBtn").onclick = ()=>copyText(`${lat}, ${lon}`);
+      $("downloadJsonBtn").onclick = ()=>downloadBlob(`soil_${p.field_id||pointId}.json`, JSON.stringify(p,null,2));
+      $("downloadCsvBtn").onclick  = ()=>downloadBlob(`soil_${p.field_id||pointId}.csv`, jsonToCsv(p));
 
-      $("copyCoordBtn").onclick=()=>copyText(`${lat}, ${lon}`);
-      $("downloadJsonBtn").onclick=()=>downloadBlob(`soil_${p.field_id}.json`,JSON.stringify(p,null,2));
-      $("downloadCsvBtn").onclick=()=>downloadBlob(`soil_${p.field_id}.csv`,jsonToCsv(p));
-
+      // 全属性
       const wrap=$("analysisWrap"); wrap.innerHTML="";
-      wrap.appendChild(renderPropsTable(p));
+appendChild((()=>{
+        const table=document.createElement("table"); table.className="eval-table";
+        const thead=document.createElement("thead"); thead.innerHTML="<tr><th>キー</th><th>値</th></tr>";
+        const tbody=document.createElement("tbody");
+        Object.entries(p).forEach(([k,v])=>{
+          const tr=document.createElement("tr");
+          tr.innerHTML=`<td>${k}</td><td>${v==null?"":String(v)}</td>`;
+          tbody.appendChild(tr);
+        });
+        table.append(thead,tbody); return table;
+      })());
 
-      const baseDir=dirOf(src);
+      // 画像
+      const baseDir = dirOf(src); // ← decode されたdir
+      const gallery = $("gallery"); gallery.innerHTML="";
+      const note = $("galleryNote"); note.textContent="";
+
       let imgs=[];
-      if(Array.isArray(p.images)) imgs=p.images.map(u=>baseDir+"/"+u);
-      else imgs=guessImages(baseDir,p.field_id);
+      if (Array.isArray(p.images) && p.images.length){
+        imgs = p.images.map(u => u.match(/^https?:\/\//) ? u : `${baseDir}/${u.replace(/^\.?\//,"")}`);
+      } else if (typeof p.images==="string" && p.images.trim()){
+        imgs = p.images.split(",").map(s=>s.trim()).filter(Boolean)
+               .map(u => u.match(/^https?:\/\//) ? u : `${baseDir}/${u.replace(/^\.?\//,"")}`);
+      } else {
+        imgs = guessImages(baseDir, p.field_id||pointId);
+      }
 
-      const gal=$("gallery"); gal.innerHTML="";
       let shown=0;
       imgs.forEach(u=>{
-        const img=new Image(); img.src=u;
-        img.onerror=()=>img.style.display="none";
-        img.onload=()=>shown++;
-        img.onclick=()=>window.open(u,"_blank");
-        gal.appendChild(img);
+        const img=new Image();
+        img.loading="lazy"; img.alt=p.field_id||""; img.src=u;
+        img.onerror=()=>{ img.style.display="none"; };
+        img.onload =()=>{ shown++; };
+        img.onclick=()=>window.open(u,"_blank","noopener");
+        gallery.appendChild(img);
       });
-
-      setTimeout(()=>{
-        if(shown===0) $("galleryNote").textContent="画像が見つかりません。";
-      },600);
+      setTimeout(()=>{ if (shown===0) note.textContent="画像が見つかりません。ファイル名やフォルダ（image/）を確認してください。"; }, 800);
     }
   </script>
 </body>
