@@ -430,11 +430,11 @@
       addRow(tbody,"微生物多様性(BIOTREX)", Number.isFinite(biotex)?biotex:"—", stdTextAndUse("biotex"), judgeRange(biotex, std?.biotex, "biotex"));
 
       // ランク（簡易：ECベース）
-      const evEc = judgeRange(num(p.EC), std?.ec, "ec");
-      const rank = evEc.label==="良" ? "A" : (evEc.label==="注意" ? "B" : "C");
-      const rankBadge = $("rankBadge");
-      rankBadge.textContent = `${rank}ランク（仮）`;
-      rankBadge.style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
+      //const evEc = judgeRange(num(p.EC), std?.ec, "ec");
+      //const rank = evEc.label==="良" ? "A" : (evEc.label==="注意" ? "B" : "C");
+      //const rankBadge = $("rankBadge");
+      //rankBadge.textContent = `${rank}ランク（仮）`;
+      //rankBadge.style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
 
       // 出典表示（使用された source のみ）
       const box=$("sourcesBox");
