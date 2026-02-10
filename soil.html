@@ -68,7 +68,7 @@
   <!-- Topbar -->
   <div class="topbar">
     <div class="row">
-      ./index.html← 地図へ戻る</a>
+      <a href="./index.html">← 地図へ戻る</a>
       <span class="pill" id="idPill"></span>
       <span class="pill" id="srcPill"></span>
     </div>
@@ -228,10 +228,10 @@
     let featureList=[]; let currentIndex=-1;
     let STANDARDS=null; let SOURCES=[];
 
-    // ==== レポート用ヘルパー ====
-    function stdTextFor(k, std){
+    // ==== 標準テキスト生成（標準列） ====
+    function stdTextOf(k, std){
       if(!std || !std[k]) return "—";
-      const s = std[k];
+      const s=std[k];
       if (k==="ph")     return `良:${s.ok?.[0]}〜${s.ok?.[1]} / 注意:${s.warn?.[0]}〜${s.warn?.[1]}`;
       if (k==="ec")     return `良:≤${s.ok_max} / 注意:≤${s.warn_max}`;
       if (k==="cec")    return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
@@ -240,23 +240,9 @@
       if (k==="biotex") return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
       return "—";
     }
-    function addRepRow(tbody, label, value, stdKey, std){
-      const tr = document.createElement("tr");
-      const v  = (value==null || value==="") ? "—" : String(value);
-      tr.innerHTML = `<td>${label}</td><td>${v}</td><td>${stdTextFor(stdKey, std)}</td>`;
-      tbody.appendChild(tr);
-    }
-    function buildRepSources(std, sources){
-      if(!std || !sources) return "";
-      const used = new Set();
-      ["ph","ec","cec","cn","om","biotex"].forEach(k=>{ const id=std[k]?.source; if(id) used.add(id); });
-      if(!used.size) return "";
-      const links=[...used].map(id=>{
-        const s=sources.find(x=>x.id===id);
-        return s ? `・${s.url}${s.title}（${s.publisher}）</a>` : "";
-      }).filter(Boolean).join("<br>");
-      return `<div>基準出典：</div>${links}`;
-    }
+
+    // レポート用もこの関数を使う
+    const stdTextFor = (k, std) => stdTextOf(k, std);
 
     // ==== 起動 ====
     main();
@@ -265,11 +251,15 @@
       if(!pointId){
         document.body.innerHTML="<div class='warn'>ID が指定されていません。</div>"; return;
       }
-      // standards（任意）
+      // standards
       try{
         const s=await fetch("data/standard_data/standards.json",{cache:"no-store"});
-        if(s.ok){ const j=await s.json(); STANDARDS=j; SOURCES=j.sources||[];
-          $("landuse").value=j.meta?.default_landuse || "paddy";
+        if(s.ok){
+          const j=await s.json();
+          STANDARDS=j;
+          SOURCES=j.sources||[];
+          // 既定用途（standards.json の meta.default_landuse を尊重）
+          $("landuse").value = j?.meta?.default_landuse || "paddy";
         }
       }catch{}
 
@@ -311,6 +301,7 @@
       const lu=$("landuse").value;
       return STANDARDS?.standards?.[lu] || null;
     }
+
     function addRow(tbody, label, v, stdText, judge){
       const tr=document.createElement("tr");
       tr.innerHTML=`
@@ -321,6 +312,7 @@
         <td>${judge.comment||""}</td>`;
       tbody.appendChild(tr);
     }
+
     function judgeRange(value, std, type){
       if(!Number.isFinite(value)) return {label:"—", class:"", comment:"値なし"};
       if(!std) return {label:"—", class:"", comment:"基準なし"};
@@ -342,8 +334,15 @@
         if(value>=w) return {label:"注意",class:"warn",comment:"やや低い"};
         return {label:"要改善",class:"bad",comment:"低い"};
       }
+      if(type==="biotex"){
+        const okMin = std.ok_min ?? 700000, warnMin = std.warn_min ?? 300000;
+        if(value>=okMin)  return {label:"良", class:"ok",   comment:"生物性は良好"};
+        if(value>=warnMin)return {label:"注意", class:"warn", comment:"平均〜やや弱い。土づくりで底上げ"};
+        return {label:"要改善", class:"bad",  comment:"弱い。被覆作物/有機物の計画投入を"};
+      }
       return {label:"—",class:"",comment:""};
     }
+
     function dirOf(url){
       const u = decodeURIComponent(url);
       return u.substring(0, u.lastIndexOf("/"));
@@ -409,18 +408,47 @@
         render(f);
       };
 
-      // 標準（既存表）
-      const std=getStd();
-      const tbody=$("evalTable").querySelector("tbody"); tbody.innerHTML="";
-      addRow(tbody,"EC",  p.EC,  "", judgeRange(num(p.EC),  std?.ec,  "ec"));
-      addRow(tbody,"pH",  p.pH,  "", judgeRange(num(p.pH),  std?.ph,  "ph"));
-      addRow(tbody,"CEC", p.CEC, "", judgeRange(num(p.CEC), std?.cec, "cec"));
-      addRow(tbody,"C/N比", Number.isFinite(CN)?fmt(CN,1):"","",{label:"—",class:"",comment:""});
+      // ===== 標準（既存表） =====
+      const std = getStd();
+      const tbody = $("evalTable").querySelector("tbody"); tbody.innerHTML="";
+      const usedSourceIds = new Set();
 
-      const rank = Number.isFinite(num(p.EC)) ? (num(p.EC)<=0.5?"A":(num(p.EC)<=0.8?"B":"C")) : "—";
-      $("rankBadge").textContent = `${rank}ランク`;
-      $("rankBadge").style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
+      function stdTextAndUse(k){
+        if(!std || !std[k]) return "—";
+        const s=std[k]; if (s.source) usedSourceIds.add(s.source);
+        return stdTextOf(k, std);
+      }
 
+      addRow(tbody,"EC (dS/m)",        p.EC,  stdTextAndUse("ec"),    judgeRange(num(p.EC),  std?.ec,  "ec"));
+      addRow(tbody,"pH",               p.pH,  stdTextAndUse("ph"),    judgeRange(num(p.pH),  std?.ph,  "ph"));
+      addRow(tbody,"CEC (me/100g)",    p.CEC, stdTextAndUse("cec"),   judgeRange(num(p.CEC), std?.cec, "cec"));
+      addRow(tbody,"C (%)",            p.C,   "—",                    {label:"—",class:"",comment:"参考表示"});
+      addRow(tbody,"N (%)",            p.N,   "—",                    {label:"—",class:"",comment:"参考表示"});
+      addRow(tbody,"C/N 比",           Number.isFinite(CN)?fmt(CN,1):"—", stdTextAndUse("cn"),    {label:"—",class:"",comment:"C,Nの参考と併読"});
+      addRow(tbody,"有機物量",         p["有機物量"], stdTextAndUse("om"), {label:"—",class:"",comment:"参考"});
+      const biotex = num(p["土壌微生物多様性・活性値(BIOTREX)"]);
+      addRow(tbody,"微生物多様性(BIOTREX)", Number.isFinite(biotex)?biotex:"—", stdTextAndUse("biotex"), judgeRange(biotex, std?.biotex, "biotex"));
+
+      // ランク（簡易：ECベース）
+      const evEc = judgeRange(num(p.EC), std?.ec, "ec");
+      const rank = evEc.label==="良" ? "A" : (evEc.label==="注意" ? "B" : "C");
+      const rankBadge = $("rankBadge");
+      rankBadge.textContent = `${rank}ランク（仮）`;
+      rankBadge.style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
+
+      // 出典表示（使用された source のみ）
+      const box=$("sourcesBox");
+      if (SOURCES && usedSourceIds.size){
+        const html=[...usedSourceIds].map(id=>{
+          const s=SOURCES.find(x=>x.id===id);
+          return s ? `・<a href="${s.url}" target="_blank" rel="noopener">${s.title}（${s.publisher}）</a>` : "";
+        }).filter(Boolean).join("<br>");
+        box.innerHTML = `<div>基準出典：</div>${html}`;
+      } else {
+        box.textContent = "基準出典：standards.json（ローカル）";
+      }
+
+      // 便利ボタン
       $("copyCoordBtn").onclick = ()=>copyText(`${lat}, ${lon}`);
       $("downloadJsonBtn").onclick = ()=>downloadBlob(`soil_${p.field_id||pointId}.json`, JSON.stringify(p,null,2));
       $("downloadCsvBtn").onclick  = ()=>downloadBlob(`soil_${p.field_id||pointId}.csv`, jsonToCsv(p));
@@ -474,7 +502,6 @@
         if (Array.isArray(p.images) && p.images.length){
           repSrc = p.images[0].match(/^https?:\/\//) ? p.images[0] : `${baseDir}/${p.images[0].replace(/^\.?\//,"")}`;
         } else {
-          // 推測の最初を使う
           const candidates = guessImages(baseDir, p.field_id||pointId);
           repSrc = candidates[0];
         }
@@ -491,17 +518,29 @@
         const repStd = getStd();
         const repTb  = $("repTbody"); repTb.innerHTML="";
         const CNrep = (Number.isFinite(num(p.C)) && Number.isFinite(num(p.N)) && num(p.N)!==0) ? (num(p.C)/num(p.N)) : null;
-        addRepRow(repTb, "EC (dS/m)", p.EC, "ec", repStd);
-        addRepRow(repTb, "pH",        p.pH, "ph", repStd);
-        addRepRow(repTb, "CEC (me/100g)", p.CEC, "cec", repStd);
-        addRepRow(repTb, "C (%)",     p.C, null, repStd);
-        addRepRow(repTb, "N (%)",     p.N, null, repStd);
-        addRepRow(repTb, "C/N 比",    Number.isFinite(CNrep)?CNrep.toFixed(1):"—", "cn", repStd);
-        addRepRow(repTb, "有機物量",  p["有機物量"], "om", repStd);
-        addRepRow(repTb, "微生物多様性(BIOTREX)", p["土壌微生物多様性・活性値(BIOTREX)"], "biotex", repStd);
 
-        // 4) 出典
-        $("repSource").innerHTML = buildRepSources(repStd, SOURCES) || "";
+        function addRepRow(tbody, label, value, stdKey){
+          const tr = document.createElement("tr");
+          const v  = (value==null || value==="") ? "—" : String(value);
+          tr.innerHTML = `<td>${label}</td><td>${v}</td><td>${stdTextOf(stdKey, repStd)}</td>`;
+          tbody.appendChild(tr);
+        }
+
+        addRepRow(repTb, "EC (dS/m)", p.EC,  "ec");
+        addRepRow(repTb, "pH",        p.pH,  "ph");
+        addRepRow(repTb, "CEC (me/100g)", p.CEC, "cec");
+        addRepRow(repTb, "C (%)",     p.C,   null);
+        addRepRow(repTb, "N (%)",     p.N,   null);
+        addRepRow(repTb, "C/N 比",    Number.isFinite(CNrep)?CNrep.toFixed(1):"—", "cn");
+        addRepRow(repTb, "有機物量",  p["有機物量"], "om");
+        addRepRow(repTb, "微生物多様性(BIOTREX)", p["土壌微生物多様性・活性値(BIOTREX)"], "biotex");
+
+        // 4) 出典（表で使われたキーの source を集約）
+        const used = new Set();
+        ["ph","ec","cec","cn","om","biotex"].forEach(k=>{ const id=repStd?.[k]?.source; if(id) used.add(id); });
+        $("repSource").innerHTML = (SOURCES && used.size)
+          ? [...used].map(id=>{ const s=SOURCES.find(x=>x.id===id); return s ? `・<a href="${s.url}" target="_blank" rel="noopener">${s.title}（${s.publisher}）</a>`:""; }).filter(Boolean).join("<br>")
+          : "";
       }catch(e){ console.warn("簡易レポート生成で警告:", e); }
 
     } // render
