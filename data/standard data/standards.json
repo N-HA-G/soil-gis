@@ -1,0 +1,50 @@
+{
+  "meta": {
+    "updated": "2026-02-08",
+    "default_landuse": "paddy"   // 既定の用途: "paddy"(水田) or "upland"(畑)
+  },
+  "sources": [
+    {
+      "id": "maff_miyazaki_1997",
+      "title": "主要作物の土壌診断基準（宮崎県・農林水産省掲載）",
+      "publisher": "農林水産省",
+      "url": "https://www.maff.go.jp/j/seisan/kankyo/hozen_type/h_sehi_kizyun/miy03.html"
+    },
+    {
+      "id": "zennoh_guide",
+      "title": "土壌診断なるほどガイド",
+      "publisher": "JA全農",
+      "url": "https://www.zennoh.or.jp/members/pdf/gijyutu_1_01b.pdf"
+    },
+    {
+      "id": "okayama_targets",
+      "title": "第4章 土壌分析結果の評価と改良対策（改良目標）",
+      "publisher": "岡山県",
+      "url": "https://www.pref.okayama.jp/uploaded/life/423596_2722883_misc.pdf"
+    },
+    {
+      "id": "maff_tottori_easy",
+      "title": "らくらく土壌診断の手引き（pH・EC・CEC など）",
+      "publisher": "農林水産省（鳥取県）",
+      "url": "https://www.maff.go.jp/j/seisan/kankyo/hozen_type/h_sehi_kizyun/tottori01.html"
+    }
+  ],
+  "standards": {
+    "paddy": {
+      "ph":   { "ok": [5.5, 6.5], "warn": [5.0, 7.5],       "source": "maff_miyazaki_1997" },
+      "ec":   { "ok_max": 0.50,   "warn_max": 0.80,         "source": "okayama_targets" },
+      "cec":  { "ok_min": 8,      "warn_min": 8,            "source": "okayama_targets" },
+      "cn":   { "ok": [10, 15],   "warn": [8, 20],          "source": "zennoh_guide" },
+      "om":   { "ok_min": 2.0,    "warn_min": 1.5,          "source": "okayama_targets" },
+      "biotex": { "ok_min": 500000, "warn_min": 200000,     "source": "zennoh_guide" }
+    },
+    "upland": {
+      "ph":   { "ok": [6.0, 7.0], "warn": [5.5, 7.5],       "source": "maff_miyazaki_1997" },
+      "ec":   { "ok_max": 0.50,   "warn_max": 0.80,         "source": "okayama_targets" },
+      "cec":  { "ok_min": 10,     "warn_min": 8,            "source": "okayama_targets" },
+      "cn":   { "ok": [10, 15],   "warn": [8, 20],          "source": "zennoh_guide" },
+      "om":   { "ok_min": 2.0,    "warn_min": 1.5,          "source": "okayama_targets" },
+      "biotex": { "ok_min": 500000, "warn_min": 200000,     "source": "zennoh_guide" }
+    }
+  }
+}

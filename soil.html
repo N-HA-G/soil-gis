@@ -5,73 +5,45 @@
   <title>土壌診断結果</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <!-- Chart.js（レーダー/棒グラフ用） -->
+  <!-- Chart.js -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <style>
     :root{
-      --c-brand:#0a66c2;
-      --c-text:#333;
-      --c-sub:#555;
-      --c-muted:#888;
-      --c-border:#eee;
-      --c-bg:#fff;
-      --c-chip:#eef2ff;
-      --c-ok:#4caf50;
-      --c-warn:#ffb300;
-      --c-bad:#e53935;
-      --shadow:0 2px 8px rgba(0,0,0,.06);
-      --radius:12px;
+      --c-brand:#0a66c2; --c-text:#333; --c-sub:#555; --c-muted:#888;
+      --c-border:#eee; --c-bg:#fff; --c-ok:#4caf50; --c-warn:#ffb300; --c-bad:#e53935;
+      --shadow:0 2px 8px rgba(0,0,0,.06); --radius:12px;
     }
     html,body{margin:0;padding:0}
-    body{
-      font-family:system-ui, -apple-system, "Segoe UI", sans-serif;
-      line-height:1.7; padding:16px; max-width:1100px; margin:0 auto;
-      color:var(--c-text); background:#f7f7f8;
-    }
-    a{color:var(--c-brand); text-decoration:none;}
-    a:hover{text-decoration:underline;}
+    body{font-family:system-ui,-apple-system,"Segoe UI",sans-serif; line-height:1.7; padding:16px; max-width:1100px; margin:0 auto; color:var(--c-text); background:#f7f7f8;}
+    a{color:var(--c-brand); text-decoration:none;} a:hover{text-decoration:underline;}
     .row{display:flex; gap:10px; align-items:center; flex-wrap:wrap;}
     .topbar{display:flex; gap:10px; align-items:center; justify-content:space-between; margin-bottom:14px; flex-wrap:wrap;}
     .pill{display:inline-flex; align-items:center; gap:6px; background:#f1f3f5; border-radius:999px; padding:2px 10px; font-size:12px; color:var(--c-sub);}
     .btn{border:1px solid #ddd; background:#fafafa; padding:6px 10px; border-radius:8px; cursor:pointer;}
-    .btn:hover{background:#f0f0f0;}
-    .btn.primary{border-color:var(--c-brand); background:var(--c-brand); color:#fff;}
-    .btn.icon{display:inline-flex; align-items:center; gap:6px;}
+    .btn:hover{background:#f0f0f0;} .btn.primary{border-color:var(--c-brand); background:var(--c-brand); color:#fff;}
     .badge{display:inline-block; color:#fff; padding:4px 12px; border-radius:6px; margin-right:6px; font-weight:700; font-size:13px;}
     .muted{color:var(--c-muted);}
-
     .card{background:var(--c-bg); border:1px solid var(--c-border); border-radius:var(--radius); padding:14px; box-shadow:var(--shadow);}
     .card h2{font-size:16px; margin:0 0 10px;}
     .grid{display:grid; grid-template-columns:1.3fr 1fr; gap:14px;}
     @media (max-width: 900px){ .grid{ grid-template-columns:1fr; } }
-
     .kpi{display:grid; grid-template-columns: repeat(5, 1fr); gap:10px;}
     @media (max-width: 900px){ .kpi{ grid-template-columns:1fr 1fr 1fr; } }
     .k{background:#f9f9fb; border:1px solid #f0f0f0; border-radius:10px; padding:10px;}
-    .k label{display:block; font-size:12px; color:var(--c-sub);}
-    .k b{font-size:20px;}
-
+    .k label{display:block; font-size:12px; color:var(--c-sub);} .k b{font-size:20px;}
     .charts{display:grid; grid-template-columns:1fr 1fr; gap:14px;}
     @media (max-width: 900px){ .charts{ grid-template-columns:1fr; } }
-
     .eval-table{width:100%; border-collapse:collapse;}
     .eval-table th,.eval-table td{border-bottom:1px solid var(--c-border); padding:6px 8px; text-align:left;}
     .chip{display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; color:#fff;}
-    .chip.ok{background:var(--c-ok);}
-    .chip.warn{background:var(--c-warn); color:#000;}
-    .chip.bad{background:var(--c-bad);}
-
-    details{margin-top:10px; background:#fafafa; padding:10px; border-radius:12px; border:1px solid var(--c-border);}
-    table.meta{border-collapse:collapse; width:100%;}
-    table.meta th, table.meta td{border-bottom:1px solid var(--c-border); padding:6px 8px; vertical-align:top;}
-    table.meta th{width:220px; text-align:left; white-space:nowrap; color:var(--c-sub); font-weight:600;}
-
+    .chip.ok{background:var(--c-ok);} .chip.warn{background:var(--c-warn); color:#000;} .chip.bad{background:var(--c-bad);}
     .gallery{display:grid; grid-template-columns: repeat(3, 1fr); gap:10px;}
     @media (max-width: 900px){ .gallery{ grid-template-columns:repeat(2, 1fr);} }
     .gallery img{width:100%; height:180px; object-fit:cover; border-radius:8px; border:1px solid var(--c-border); box-shadow:var(--shadow); background:#fff;}
     .warn{background:#fff3cd; border:1px solid #ffeeba; padding:10px; border-radius:10px;}
-    .toolbar .spacer{flex:1}
+    .sources{font-size:12px; color:var(--c-muted);}
+    .summary-top{background:#fff; border-left:5px solid var(--c-brand); padding:10px 12px; border-radius:8px; box-shadow:var(--shadow);}
   </style>
 </head>
 <body>
@@ -83,20 +55,22 @@
       <span class="pill" id="idPill"></span>
       <span class="pill" id="srcPill"></span>
     </div>
-    <div class="row toolbar">
+    <div class="row">
       <label>用途</label>
       <select id="landuse">
         <option value="paddy">水田</option>
         <option value="upland">畑</option>
       </select>
-      <span class="spacer"></span>
       <button class="btn" id="prevBtn">← 前へ</button>
       <button class="btn" id="nextBtn">次へ →</button>
-      <button class="btn" id="copyLinkBtn" title="この診断ページURLをコピー">🔗 コピー</button>
+      <button class="btn" id="copyLinkBtn">🔗 コピー</button>
       <button class="btn" id="editToggle">編集</button>
       <button class="btn primary" id="saveBtn" style="display:none;">保存</button>
     </div>
   </div>
+
+  <!-- 最終地点の説明（最上部に大きく） -->
+  <div id="summaryTop" class="summary-top" style="display:none; margin-bottom:12px;"></div>
 
   <!-- Title -->
   <h1 id="fieldName" style="margin:6px 0;"></h1>
@@ -108,7 +82,7 @@
     <span class="badge" style="background:var(--c-ok);">soil_points参照</span>
   </div>
 
-  <!-- One line -->
+  <!-- One-liner（自動） -->
   <p id="oneLine" style="font-weight:700; margin-top:10px;"></p>
 
   <!-- KPIs + Tools -->
@@ -118,13 +92,13 @@
       <div class="k"><label>EC</label><b id="kEC">-</b></div>
       <div class="k"><label>pH</label><b id="kpH">-</b></div>
       <div class="k"><label>CEC</label><b id="kCEC">-</b></div>
-      <div class="k"><label>採取日</label><b id="kDate" style="font-size:14px;">-</b></div>
-      <div class="k"><label>座標</label><b id="kCoord" style="font-size:14px;">-</b></div>
+      <div class="k"><label>C/N比</label><b id="kCN">-</b></div>
+      <div class="k"><label>微生物多様性</label><b id="kBio">-</b></div>
     </div>
     <div class="row" style="margin-top:8px;">
-      <button class="btn icon" id="copyCoordBtn">📍 座標コピー</button>
-      <button class="btn icon" id="downloadJsonBtn">⬇ JSON</button>
-      <button class="btn icon" id="downloadCsvBtn">⬇ CSV</button>
+      <button class="btn" id="copyCoordBtn">📍 座標コピー</button>
+      <button class="btn" id="downloadJsonBtn">⬇ JSON</button>
+      <button class="btn" id="downloadCsvBtn">⬇ CSV</button>
     </div>
   </div>
 
@@ -169,34 +143,21 @@
     </div>
   </div>
 
-  <!-- Evaluation table -->
+  <!-- Evaluation table（引用基準付き） -->
   <div class="card" style="margin-top:12px;">
-    <h2>標準値との比較（暫定基準）</h2>
+    <h2>標準値との比較（用途ごとの基準を引用）</h2>
     <table class="eval-table" id="evalTable">
       <thead>
         <tr><th>項目</th><th>値</th><th>標準（目安）</th><th>判定</th><th>コメント</th></tr>
       </thead>
       <tbody></tbody>
     </table>
-    <details style="margin-top:8px;">
-      <summary>基準を編集（このページ内のみ反映）</summary>
-      <div class="row" style="margin-top:8px;">
-        <div>EC 良: ≤ <input id="std_ec_ok" type="number" step="0.01" style="width:80px"> / 注意: ≤ <input id="std_ec_warn" type="number" step="0.01" style="width:80px"></div>
-      </div>
-      <div class="row">
-        <div>pH 良: <input id="std_ph_ok_lo" type="number" step="0.1" style="width:80px">〜<input id="std_ph_ok_hi" type="number" step="0.1" style="width:80px"> / 注意幅: <input id="std_ph_warn_lo" type="number" step="0.1" style="width:80px">〜<input id="std_ph_warn_hi" type="number" step="0.1" style="width:80px"></div>
-      </div>
-      <div class="row">
-        <div>CEC 良: ≥ <input id="std_cec_ok" type="number" step="1" style="width:80px"> / 注意: ≥ <input id="std_cec_warn" type="number" step="1" style="width:80px"></div>
-      </div>
-      <div class="row"><button class="btn primary" id="applyStdBtn">基準を適用</button></div>
-      <small class="muted">※学術的な定数ではなく、運用上の暫定目安です。必要に応じて調整してください。</small>
-    </details>
+    <div class="sources" id="sourcesBox" style="margin-top:8px;"></div>
   </div>
 
-  <!-- Gallery -->
+  <!-- 画像ギャラリー -->
   <div class="card" style="margin-top:12px;">
-    <h2>画像ギャラリー</h2>
+    <h2>画像ギャラリー（image/）</h2>
     <div id="gallery" class="gallery"></div>
     <div id="galleryNote" class="muted" style="margin-top:6px;"></div>
   </div>
@@ -209,202 +170,67 @@
 
   <script>
     /**********************
-     * 設定（暫定目安の既定値）
+     * 便利関数
      **********************/
-    const DEFAULT_STANDARDS = {
-      paddy: { // 水田
-        ec:  { ok: 0.12, warn: 0.20 },          // EC[dS/m] 良: ≤0.12, 注意: ≤0.20, それ以上は要改善
-        ph:  { ok:[5.5, 6.5], warn:[5.0, 7.5] }, // pH 良:5.5〜6.5, 注意:5.0〜5.5 / 6.5〜7.5
-        cec: { ok: 10, warn: 8 }                 // CEC 良:≥10, 注意:≥8
-      },
-      upland: { // 畑
-        ec:  { ok: 0.10, warn: 0.15 },
-        ph:  { ok:[6.0, 7.0], warn:[5.5, 7.5] },
-        cec: { ok: 10, warn: 8 }
-      }
-    };
-
-    /**********************
-     * ユーティリティ
-     **********************/
-    const $ = (id) => document.getElementById(id);
-    const num = (x) => { const n = Number(x); return Number.isFinite(n) ? n : NaN; };
-    function rankColor(rank, alpha=1){
-      switch(rank){
-        case "A": return `rgba(76,175,80,${alpha})`;
-        case "B": return `rgba(255,193,7,${alpha})`;
-        case "C": return `rgba(244,67,54,${alpha})`;
-        default:  return `rgba(158,158,158,${alpha})`;
-      }
-    }
-    function saveMemo(key, obj){ localStorage.setItem(key, JSON.stringify(obj)); }
-    function loadMemo(key){ try{ const r=localStorage.getItem(key); return r?JSON.parse(r):{}; }catch{ return {}; } }
-    async function copyText(text){
-      try{ await navigator.clipboard.writeText(text); alert("コピーしました"); }
-      catch{ prompt("コピーできない場合は手動でコピーしてください:", text); }
-    }
+    const $ = id => document.getElementById(id);
+    const num = x => { const n = Number(x); return Number.isFinite(n) ? n : NaN; };
+    const fmt = (v, d=2) => Number.isFinite(v) ? v.toFixed(d) : "—";
+    async function copyText(text){ try{ await navigator.clipboard.writeText(text); alert("コピーしました"); } catch{ prompt("コピーできない場合は手動でコピーしてください:", text); } }
     function renderPropsTable(props){
-      const table = document.createElement("table");
-      table.className = "meta";
-      Object.entries(props || {}).forEach(([k,v])=>{
-        const tr=document.createElement("tr");
-        const th=document.createElement("th"); th.textContent=k;
-        const td=document.createElement("td"); td.textContent = v==null ? "" : String(v);
-        tr.append(th,td); table.append(tr);
-      });
-      return table;
+      const table = document.createElement("table"); table.className="meta";
+      Object.entries(props||{}).forEach(([k,v])=>{
+        const tr=document.createElement("tr"); const th=document.createElement("th"); const td=document.createElement("td");
+        th.textContent=k; td.textContent=(v==null?"":String(v)); tr.append(th,td); table.append(tr);
+      }); return table;
     }
-    function jsonToCsvRow(obj){
-      const keys = Object.keys(obj);
-      const vals = keys.map(k => {
-        const v = obj[k];
-        const t = (v==null) ? "" : String(v);
-        return '"' + t.replace(/"/g,'""') + '"';
-      });
-      return keys.join(",") + "\n" + vals.join(",") + "\n";
+    function jsonToCsv(obj){
+      const keys=Object.keys(obj); const vals=keys.map(k=>'"'+String(obj[k]??"").replace(/"/g,'""')+'"');
+      return keys.join(",")+"\n"+vals.join(",")+"\n";
     }
-    function downloadBlob(filename, text, type="text/plain"){
-      const blob = new Blob([text], {type});
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = filename;
-      a.click();
-      setTimeout(()=>URL.revokeObjectURL(a.href), 1000);
+    function downloadBlob(name, text, type="text/plain"){
+      const blob=new Blob([text], {type}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+      setTimeout(()=>URL.revokeObjectURL(a.href),1000);
     }
 
     /**********************
-     * 評価ロジック
-     **********************/
-    function evaluateValue(value, std, type){
-      // 戻り: {label: '良/注意/要改善/—', class: 'ok/warn/bad', rangeText, comment}
-      if (!Number.isFinite(value)) return { label:"—", class:"", rangeText:"—", comment:"値なし" };
-
-      if (type === "ec"){
-        const ok = std.ok, warn = std.warn;
-        if (value <= ok)  return { label:"良", class:"ok",   rangeText:`≤ ${ok}`,  comment:"塩類濃度は問題ない範囲です。`" };
-        if (value <= warn)return { label:"注意", class:"warn",rangeText:`≤ ${warn}`,comment:"やや高め。灌漑や施肥管理の見直しを検討。" };
-        return { label:"要改善", class:"bad", rangeText:`> ${warn}`, comment:"高め。施肥量/排塩/灌漑の見直しが必要。" };
-      }
-
-      if (type === "ph"){
-        const [okLo, okHi] = std.ok;
-        const [wLo,  wHi ] = std.warn;
-        if (value >= okLo && value <= okHi)
-          return { label:"良", class:"ok", rangeText:`${okLo}〜${okHi}`, comment:"適正域内です。" };
-        if ((value >= wLo && value < okLo) || (value > okHi && value <= wHi))
-          return { label:"注意", class:"warn", rangeText:`${wLo}〜${okLo} / ${okHi}〜${wHi}`, comment:"やや外れ。石灰/硫黄等の矯正資材を検討。" };
-        return { label:"要改善", class:"bad", rangeText:`< ${wLo} / > ${wHi}`, comment:"適正域外。矯正資材と管理の見直しが必要。" };
-      }
-
-      if (type === "cec"){
-        const ok = std.ok, warn = std.warn;
-        if (value >= ok)  return { label:"良", class:"ok",   rangeText:`≥ ${ok}`,  comment:"保肥力は十分です。" };
-        if (value >= warn)return { label:"注意", class:"warn",rangeText:`≥ ${warn}`,comment:"やや低め。有機物投入等の改善を検討。" };
-        return { label:"要改善", class:"bad", rangeText:`< ${warn}`, comment:"低め。堆肥/緑肥等での改善が有効。" };
-      }
-
-      return { label:"—", class:"", rangeText:"—", comment:"" };
-    }
-
-    function calcRankByEC(ec, landuseStd){
-      if (!Number.isFinite(ec)) return "—";
-      // 簡易：EC 良→A, 注意→B, 要改善→C
-      const ev = evaluateValue(ec, landuseStd.ec, "ec");
-      if (ev.label === "良") return "A";
-      if (ev.label === "注意") return "B";
-      return "C";
-    }
-
-    function scoreRadar(p){ // 0..5スケール
-      const ec  = num(p.EC);
-      const ph  = num(p.pH);
-      const cec = num(p.CEC);
-      const clamp = (x)=>Math.max(0, Math.min(5, x));
-      const soil_health = clamp(Math.round(Number.isFinite(cec) ? (cec/10) : 2));
-      const safety      = clamp(Number.isFinite(ph) ? ((ph>=6 && ph<=7.2)?5:3) : 3);
-      const environment = clamp(Number.isFinite(ec) ? ((ec>=0.12)?4:3) : 3);
-      const taste       = clamp(Math.round((soil_health + safety)/2));
-      return { taste, soil_health, environment, safety };
-    }
-
-    /**********************
-     * 画像読み込み
-     **********************/
-    async function loadImagesForFeature(srcUrl, feature){
-      // 優先: props.images → sidecar images.json → 推測パターン
-      const props = feature.properties || {};
-      let list = [];
-
-      if (Array.isArray(props.images) && props.images.length){
-        list = props.images;
-      } else if (typeof props.images === "string" && props.images.trim()){
-        list = props.images.split(",").map(s => s.trim()).filter(Boolean);
-      }
-
-      if (list.length) return absoluteList(list, srcUrl);
-
-      // sidecar images.json
-      try{
-        const baseDir = srcUrl.substring(0, srcUrl.lastIndexOf("/"));
-        const imagesJsonUrl = baseDir + "/images.json";
-        const r = await fetch(imagesJsonUrl, {cache:"no-store"});
-        if (r.ok){
-          const m = await r.json(); // { "F001": ["path", ...], ... }
-          const fid = String(props.field_id ?? "");
-          if (m && fid && Array.isArray(m[fid])){
-            return absoluteList(m[fid], srcUrl);
-          }
-        }
-      }catch{}
-
-      // 推測パターン: <dir>/images/<id>_1..6.(jpg|jpeg|png|webp)
-      const dir = srcUrl.substring(0, srcUrl.lastIndexOf("/")) + "/images/";
-      const fid = String(props.field_id ?? "");
-      const exts = ["jpg","jpeg","png","webp"];
-      const tries = [];
-      for (let i=1;i<=6;i++){
-        for (const e of exts){
-          tries.push(`${dir}${fid}_${i}.${e}`);
-        }
-      }
-      // 存在チェック：HEADできないので <img> onerror で握りつぶす方式（ギャラリー側で非表示）
-      return tries;
-    }
-
-    function absoluteList(list, srcUrl){
-      // list が相対なら srcUrl のディレクトリから解決
-      const baseDir = srcUrl.substring(0, srcUrl.lastIndexOf("/")) + "/";
-      return list.map(u => u.match(/^https?:\/\//) ? u : (u.startsWith("./")||u.startsWith("../")? new URL(u, baseDir).toString() : baseDir + u));
-    }
-
-    /**********************
-     * ページ状態
+     * URL パラメータ
      **********************/
     const params = new URLSearchParams(location.search);
     const pointId = params.get("id");
     const src = params.get("src") || "data/Saitama/Chichibu/Oota/soil_points.geojson";
-
     $("idPill").textContent  = `ID: ${pointId ?? "-"}`;
     $("srcPill").textContent = `src: ${src}`;
 
-    // 用途の保持（データセットごとに記憶）
-    const LU_KEY = "soil_landuse:" + src;
-    const savedLU = localStorage.getItem(LU_KEY);
-    if (savedLU) $("landuse").value = savedLU;
+    /**********************
+     * 状態
+     **********************/
+    let featureList = []; let currentIndex = -1;
+    let radarChart = null, barChart = null;
+    let STANDARDS = null; let SOURCES = []; let STD_MAP = null;
+    const LU_KEY = "soil_landuse:"+src;
 
-    let featureList = [];
-    let currentIndex = -1;
-    let radarChart = null;
-    let barChart = null;
-
+    /**********************
+     * メイン
+     **********************/
     main();
-
     async function main(){
-      if(!pointId){
-        document.body.innerHTML = `<div class="warn">IDが指定されていません。例：<code>soil.html?id=F001&src=...</code></div>`;
-        return;
-      }
+      if(!pointId){ document.body.innerHTML = `<div class="warn">IDが指定されていません。例：<code>soil.html?id=F001&src=...</code></div>`; return; }
 
+      // 基準ファイルをロード
+      try{
+        const stdRes = await fetch("data/standard_data/standards.json", {cache:"no-store"});
+        if (stdRes.ok) {
+          const j = await stdRes.json();
+          STANDARDS = j;
+          SOURCES = Array.isArray(j.sources) ? j.sources : [];
+          const savedLU = localStorage.getItem(LU_KEY) || j?.meta?.default_landuse || "paddy";
+          $("landuse").value = savedLU;
+        } else {
+          STANDARDS = null;
+        }
+      }catch{ STANDARDS = null; }
+
+      // soil_points をロード
       let fc;
       try{
         const res = await fetch(src, {cache:"no-store"});
@@ -440,206 +266,262 @@
         render(featureList[currentIndex]); // 再評価
       };
 
-      $("applyStdBtn").onclick = () => {
-        render(featureList[currentIndex], readCustomStd()); // 編集した基準で再評価
-      };
-
       render(featureList[currentIndex]);
     }
 
+    /**********************
+     * 評価ロジック
+     **********************/
     function getStd(){
-      const lu = $("landuse").value; // paddy / upland
-      return structuredClone(DEFAULT_STANDARDS[lu]);
+      const lu = $("landuse").value || STANDARDS?.meta?.default_landuse || "paddy";
+      return STANDARDS?.standards?.[lu] || null;
     }
-    function readCustomStd(){
-      const s = getStd();
-      const ec_ok   = num($("std_ec_ok").value);
-      const ec_warn = num($("std_ec_warn").value);
-      const ph_ok_lo = num($("std_ph_ok_lo").value);
-      const ph_ok_hi = num($("std_ph_ok_hi").value);
-      const ph_warn_lo = num($("std_ph_warn_lo").value);
-      const ph_warn_hi = num($("std_ph_warn_hi").value);
-      const cec_ok  = num($("std_cec_ok").value);
-      const cec_warn= num($("std_cec_warn").value);
+    function addRow(tbody, label, v, stdText, judge){
+      const tr=document.createElement("tr");
+      const td1=document.createElement("td"); td1.textContent=label;
+      const td2=document.createElement("td"); td2.textContent=(v ?? "—");
+      const td3=document.createElement("td"); td3.textContent=stdText || "—";
+      const td4=document.createElement("td"); const chip=document.createElement("span"); chip.className="chip "+(judge.class||""); chip.textContent=judge.label; td4.appendChild(chip);
+      const td5=document.createElement("td"); td5.textContent=judge.comment||"";
+      tr.append(td1,td2,td3,td4,td5); tbody.appendChild(tr);
+    }
+    function judgeRange(value, std, type){
+      if (!Number.isFinite(value)) return {label:"—", class:"", comment:"値なし"};
+      if (!std) return {label:"—", class:"", comment:"基準なし"};
+      if (type==="ph"){
+        const ok = std.ok||[5.5,6.5], warn=std.warn||[5.0,7.5];
+        if (value>=ok[0] && value<=ok[1]) return {label:"良", class:"ok", comment:"適正域内"};
+        if ((value>=warn[0] && value<ok[0]) || (value>ok[1] && value<=warn[1])) return {label:"注意", class:"warn", comment:"やや外れ。矯正資材等を検討"};
+        return {label:"要改善", class:"bad", comment:"適正域外。矯正・施肥設計の見直し"};
+      }
+      if (type==="ec"){
+        const okMax = std.ok_max ?? 0.5, warnMax = std.warn_max ?? 0.8;
+        if (value<=okMax)  return {label:"良", class:"ok", comment:"濃度障害の懸念は小さい"};
+        if (value<=warnMax)return {label:"注意", class:"warn", comment:"やや高め。施肥・潅水管理を調整"};
+        return {label:"要改善", class:"bad", comment:"高め。塩類集積に注意、施肥削減/溶脱対策"};
+      }
+      if (type==="cec"){
+        const okMin = std.ok_min ?? 10, warnMin = std.warn_min ?? 8;
+        if (value>=okMin)  return {label:"良", class:"ok", comment:"保肥力は十分"};
+        if (value>=warnMin)return {label:"注意", class:"warn", comment:"やや低め。有機物投入・土づくりを検討"};
+        return {label:"要改善", class:"bad", comment:"低め。堆肥・緑肥等で改良を"};
+      }
+      if (type==="cn"){
+        const ok = std.ok||[10,15], warn=std.warn||[8,20];
+        if (value>=ok[0] && value<=ok[1]) return {label:"良", class:"ok", comment:"分解バランスは良好"};
+        if ((value>=warn[0] && value<ok[0]) || (value>ok[1] && value<=warn[1])) return {label:"注意", class:"warn", comment:"やや偏り。資材の種類/投入量を調整"};
+        return {label:"要改善", class:"bad", comment:"偏り大。C/Nバランスの見直しを"};
+      }
+      if (type==="om"){ // 有機物量
+        const okMin = std.ok_min ?? 2.0, warnMin = std.warn_min ?? 1.5;
+        if (value>=okMin)  return {label:"良", class:"ok", comment:"有機物は十分"};
+        if (value>=warnMin)return {label:"注意", class:"warn", comment:"やや少なめ。有機物補給を検討"};
+        return {label:"要改善", class:"bad", comment:"少ない。堆肥/被覆作物の活用を"};
+      }
+      if (type==="biotex"){ // 微生物多様性（任意スケール）
+        const okMin = std.ok_min ?? 500000, warnMin = std.warn_min ?? 200000;
+        if (value>=okMin)  return {label:"良", class:"ok", comment:"生物性は良好"};
+        if (value>=warnMin)return {label:"注意", class:"warn", comment:"やや弱い。有機物・被覆作物等で底上げ"};
+        return {label:"要改善", class:"bad", comment:"弱い。耕うん/資材投入を見直し"};
+      }
+      return {label:"—", class:"", comment:""};
+    }
 
-      if (Number.isFinite(ec_ok))   s.ec.ok = ec_ok;
-      if (Number.isFinite(ec_warn)) s.ec.warn = ec_warn;
-      if (Number.isFinite(ph_ok_lo) && Number.isFinite(ph_ok_hi)) s.ph.ok = [ph_ok_lo, ph_ok_hi];
-      if (Number.isFinite(ph_warn_lo) && Number.isFinite(ph_warn_hi)) s.ph.warn = [ph_warn_lo, ph_warn_hi];
-      if (Number.isFinite(cec_ok))   s.cec.ok = cec_ok;
-      if (Number.isFinite(cec_warn)) s.cec.warn = cec_warn;
-      return s;
-    }
-    function populateStdEditors(std){
-      $("std_ec_ok").value = std.ec.ok;
-      $("std_ec_warn").value = std.ec.warn;
-      $("std_ph_ok_lo").value = std.ph.ok[0];
-      $("std_ph_ok_hi").value = std.ph.ok[1];
-      $("std_ph_warn_lo").value = std.ph.warn[0];
-      $("std_ph_warn_hi").value = std.ph.warn[1];
-      $("std_cec_ok").value = std.cec.ok;
-      $("std_cec_warn").value = std.cec.warn;
+    /**********************
+     * 画像（image/）を収集
+     **********************/
+    function dirOf(url){ return url.substring(0, url.lastIndexOf("/")); }
+    function guessImages(baseDir, fid){
+      const exts=["jpg","jpeg","png","webp"]; const urls=[];
+      for(let i=1;i<=6;i++) for(const e of exts) urls.push(`${baseDir}/image/${fid}_${i}.${e}`);
+      return urls;
     }
 
-    async function render(f, overrideStd){
+    /**********************
+     * 表示
+     **********************/
+    async function render(f){
       const p = f.properties || {};
       const [lon, lat] = f.geometry?.coordinates || [];
+      const CN = (Number.isFinite(num(p.C)) && Number.isFinite(num(p.N)) && num(p.N)!==0) ? num(p.C)/num(p.N) : NaN;
 
+      // 最上部の説明（優先順：GeoJSON → field_notes.json → 自動生成）
+      let topNote = p["最終地点の説明"] || p["固定説明"] || "";
+      if (!topNote){
+        try{
+          const notesRes = await fetch("data/standard_data/field_notes.json", {cache:"no-store"});
+          if (notesRes.ok){
+            const notes = await notesRes.json();
+            topNote = notes[p.field_id] || "";
+          }
+        }catch{}
+      }
+      if (!topNote){
+        // 自動文（最低限）
+        const parts=[];
+        if (Number.isFinite(num(p.EC)))  parts.push(`EC=${fmt(num(p.EC))}`);
+        if (Number.isFinite(num(p.pH)))  parts.push(`pH=${fmt(num(p.pH))}`);
+        if (Number.isFinite(num(p.CEC))) parts.push(`CEC=${fmt(num(p.CEC),0)}`);
+        if (Number.isFinite(CN))         parts.push(`C/N=${fmt(CN,1)}`);
+        topNote = parts.length ? `主要値：${parts.join(" / ")}` : "";
+      }
+      if (topNote){
+        $("summaryTop").style.display="block";
+        $("summaryTop").textContent = topNote;
+      } else {
+        $("summaryTop").style.display="none";
+      }
+
+      // タイトル・場所
       $("fieldName").textContent = p.field_id || pointId;
       $("location").textContent  = p["場所名"] || "";
 
-      $("kEC").textContent   = p.EC ?? "-";
-      $("kpH").textContent   = p.pH ?? "-";
-      $("kCEC").textContent  = p.CEC ?? "-";
-      $("kDate").textContent = p["採取日"] ?? "-";
-      $("kCoord").textContent =
-        (Number.isFinite(lat) && Number.isFinite(lon)) ? `${lat.toFixed(6)}, ${lon.toFixed(6)}` : "-";
+      // KPI
+      $("kEC").textContent   = (p.EC ?? "-");
+      $("kpH").textContent   = (p.pH ?? "-");
+      $("kCEC").textContent  = (p.CEC ?? "-");
+      $("kCN").textContent   = Number.isFinite(CN) ? fmt(CN,1) : "-";
+      $("kBio").textContent  = (p["土壌微生物多様性・活性値(BIOTREX)"] ?? "-");
 
-      $("copyCoordBtn").onclick = () => {
-        if (Number.isFinite(lat) && Number.isFinite(lon)) copyText(`${lat.toFixed(6)}, ${lon.toFixed(6)}`);
-        else alert("座標がありません");
-      };
-      $("downloadJsonBtn").onclick = () => downloadBlob(`soil_${p.field_id || pointId}.json`, JSON.stringify(p, null, 2), "application/json");
-      $("downloadCsvBtn").onclick  = () => downloadBlob(`soil_${p.field_id || pointId}.csv`, jsonToCsvRow(p), "text/csv");
-
-      // 一言（自動）
+      // ワンライン自動
       const auto = (() => {
-        const ec = num(p.EC); const ph = num(p.pH); const cec = num(p.CEC);
-        let msg = "測定値に基づき管理方針を検討できます。";
-        if(Number.isFinite(ec) && ec < 0.10) msg = "ECが低め：施肥・有機物管理の検討が有効。";
-        if(Number.isFinite(ph) && (ph < 5.5 || ph > 7.5)) msg = "pHが適正域外：矯正資材の検討が有効。";
-        if(Number.isFinite(cec) && cec < 10) msg = "CECが低め：保肥力向上（有機物投入等）が有効。";
+        const ec=num(p.EC), ph=num(p.pH), cec=num(p.CEC);
+        let msg="測定値に基づき管理方針を検討できます。";
+        if(Number.isFinite(ec) && ec<0.10) msg="ECが低め：施肥・有機物管理の検討が有効。";
+        if(Number.isFinite(ph) && (ph<5.5 || ph>7.5)) msg="pHが適正域外：矯正資材の検討が有効。";
+        if(Number.isFinite(cec) && cec<10) msg="CECが低め：保肥力向上（有機物投入等）が有効。";
         return msg;
       })();
+      $("oneLine").textContent = (p["主な課題"]||"") ? `主な課題：${p["主な課題"]}` : auto;
 
+      // メモ
       const memoKey = `soilMemo:${src}#${p.field_id || pointId}`;
-      const memo = loadMemo(memoKey);
+      const memo = (()=>{ try{ return JSON.parse(localStorage.getItem(memoKey) || "{}"); }catch{return{}} })();
       const fixedDesc = memo.fixedDesc ?? p["固定説明"] ?? "";
       const evalTxt   = memo.evalTxt   ?? p["評価"] ?? "";
       const issue     = memo.issue     ?? p["主な課題"] ?? "";
       const solution  = memo.solution  ?? p["改善策"] ?? "";
-
-      $("oneLine").textContent = issue ? `主な課題：${issue}` : auto;
       $("fixedDescView").textContent = fixedDesc || "（未入力）";
       $("evalView").textContent      = evalTxt   || "（未入力）";
       $("issueView").textContent     = issue     || "（未入力）";
       $("solutionView").textContent  = solution  || "（未入力）";
+      $("fixedDescInput").value = fixedDesc; $("evalInput").value=evalTxt; $("issueInput").value=issue; $("solutionInput").value=solution;
 
-      $("fixedDescInput").value = fixedDesc;
-      $("evalInput").value      = evalTxt;
-      $("issueInput").value     = issue;
-      $("solutionInput").value  = solution;
-
-      const editToggle = $("editToggle");
-      const saveBtn = $("saveBtn");
-      const memoEdit = $("memoEdit");
-      let editing = false;
-      editToggle.onclick = () => {
-        editing = !editing;
-        memoEdit.style.display = editing ? "block" : "none";
-        saveBtn.style.display  = editing ? "inline-block" : "none";
-        editToggle.textContent = editing ? "閲覧" : "編集";
-      };
-      saveBtn.onclick = () => {
-        const newMemo = {
-          fixedDesc: $("fixedDescInput").value,
-          evalTxt:   $("evalInput").value,
-          issue:     $("issueInput").value,
-          solution:  $("solutionInput").value
-        };
-        saveMemo(memoKey, newMemo);
-        render(f, overrideStd);
-        alert("保存しました（この端末のブラウザに保存されます）");
+      let editing=false;
+      $("editToggle").onclick = ()=>{ editing=!editing; $("memoEdit").style.display=editing?"block":"none"; $("saveBtn").style.display=editing?"inline-block":"none"; $("editToggle").textContent=editing?"閲覧":"編集"; };
+      $("saveBtn").onclick = ()=>{
+        const newMemo={ fixedDesc:$("fixedDescInput").value, evalTxt:$("evalInput").value, issue:$("issueInput").value, solution:$("solutionInput").value };
+        localStorage.setItem(memoKey, JSON.stringify(newMemo));
+        render(f); alert("保存しました（この端末のブラウザに保存されます）");
       };
 
-      // 基準・評価
-      const std = overrideStd || getStd();
-      populateStdEditors(std);
+      // 基準 & 判定
+      const std = getStd();
+      const tbody = $("evalTable").querySelector("tbody"); tbody.innerHTML="";
+      const srcLinks = new Set();
+      function stdTextOf(k){
+        if(!std||!std[k]) return "—";
+        const s=std[k], id=s.source;
+        if (id) srcLinks.add(id);
+        if (k==="ph") return `良:${s.ok?.[0]}〜${s.ok?.[1]} / 注意:${s.warn?.[0]}〜${s.warn?.[1]}`;
+        if (k==="ec") return `良:≤${s.ok_max} / 注意:≤${s.warn_max}`;
+        if (k==="cec")return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
+        if (k==="cn") return `良:${s.ok?.[0]}〜${s.ok?.[1]} / 注意:${s.warn?.[0]}〜${s.warn?.[1]}`;
+        if (k==="om") return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
+        if (k==="biotex") return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
+        return "—";
+      }
+      addRow(tbody, "EC (dS/m)", p.EC,  stdTextOf("ec"),    judgeRange(num(p.EC),  std?.ec,  "ec"));
+      addRow(tbody, "pH",        p.pH,  stdTextOf("ph"),    judgeRange(num(p.pH),  std?.ph,  "ph"));
+      addRow(tbody, "CEC (me/100g)", p.CEC, stdTextOf("cec"), judgeRange(num(p.CEC), std?.cec, "cec"));
+      addRow(tbody, "C (％)",    p.C,   "—",               {label:"—", class:"", comment:"参考表示"});
+      addRow(tbody, "N (％)",    p.N,   "—",               {label:"—", class:"", comment:"参考表示"});
+      addRow(tbody, "C/N 比",   Number.isFinite(CN)?fmt(CN,1):"—", stdTextOf("cn"), judgeRange(CN, std?.cn, "cn"));
+      addRow(tbody, "有機物量", p["有機物量"], stdTextOf("om"),   judgeRange(num(p["有機物量"]), std?.om, "om"));
+      const bio = num(p["土壌微生物多様性・活性値(BIOTREX)"]);
+      addRow(tbody, "微生物多様性(BIOTREX)", Number.isFinite(bio)?bio:"—", stdTextOf("biotex"), judgeRange(bio, std?.biotex, "biotex"));
 
-      const evEC  = evaluateValue(num(p.EC),  std.ec,  "ec");
-      const evPH  = evaluateValue(num(p.pH),  std.ph,  "ph");
-      const evCEC = evaluateValue(num(p.CEC), std.cec, "cec");
-
-      // ランク（ECベースの簡易）
-      const rank = calcRankByEC(num(p.EC), std);
-      const rankBadge = $("rankBadge");
-      rankBadge.textContent = `${rank}ランク（仮）`;
-      rankBadge.style.background = rankColor(rank);
-
-      // 表
-      const tbody = $("evalTable").querySelector("tbody");
-      tbody.innerHTML = "";
-      addEvalRow(tbody, "EC (dS/m)", p.EC,  evEC.rangeText,  evEC);
-      addEvalRow(tbody, "pH",        p.pH,  evPH.rangeText,  evPH);
-      addEvalRow(tbody, "CEC",       p.CEC, evCEC.rangeText, evCEC);
+      // ランク（簡易：EC判定ベース）
+      const evEc = judgeRange(num(p.EC), std?.ec, "ec");
+      const rank = evEc.label==="良" ? "A" : (evEc.label==="注意" ? "B" : "C");
+      const rankBadge = $("rankBadge"); rankBadge.textContent=`${rank}ランク（仮）`; rankBadge.style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
 
       // レーダー・棒
-      const scores = scoreRadar(p);
+      const scores = (()=>{ // 0..5に正規化
+        const ec=num(p.EC), ph=num(p.pH), cec=num(p.CEC);
+        const soil_health = Number.isFinite(cec) ? Math.max(0, Math.min(5, Math.round(cec/10))) : 2;
+        const safety      = Number.isFinite(ph)  ? (ph>=6 && ph<=7.2 ? 5 : 3) : 3;
+        const environment = Number.isFinite(ec)  ? (ec>=0.12?4:3) : 3;
+        const taste       = Math.max(0, Math.min(5, Math.round((soil_health + safety)/2)));
+        return {taste, soil_health, environment, safety};
+      })();
       if (radarChart) radarChart.destroy();
       radarChart = new Chart($("radarChart"), {
         type:"radar",
         data:{ labels:["おいしさ","土壌の健全性","環境配慮","安全性"],
           datasets:[{ data:[scores.taste, scores.soil_health, scores.environment, scores.safety],
-            fill:true, backgroundColor: rankColor(rank, 0.25), borderColor: rankColor(rank, 1),
-            pointBackgroundColor: rankColor(rank, 1) }]},
-        options:{ scales:{ r:{ min:0,max:5,ticks:{display:false,stepSize:1} } }, plugins:{ legend:{display:false} } }
+            fill:true, backgroundColor:"rgba(10,102,194,0.25)", borderColor:"rgba(10,102,194,1)", pointBackgroundColor:"rgba(10,102,194,1)"}]},
+        options:{ scales:{ r:{ min:0,max:5,ticks:{display:false,stepSize:1}}}, plugins:{legend:{display:false}} }
       });
-
       if (barChart) barChart.destroy();
       barChart = new Chart($("barChart"), {
         type:"bar",
-        data:{ labels:["EC","pH","CEC"],
-          datasets:[{ label:"値", data:[ num(p.EC)||0, num(p.pH)||0, num(p.CEC)||0 ],
-          backgroundColor:["#4fc3f7","#81c784","#ffb74d"] }] },
-        options:{ plugins:{ legend:{display:false} }, scales:{ y:{ beginAtZero:true } } }
+        data:{ labels:["EC","pH","CEC","C/N","BIOTREX"],
+          datasets:[{ label:"値", data:[num(p.EC)||0, num(p.pH)||0, num(p.CEC)||0, Number.isFinite(CN)?CN:0, Number.isFinite(bio)?bio:0],
+            backgroundColor:["#4fc3f7","#81c784","#ffb74d","#9575cd","#90a4ae"] }]},
+        options:{ plugins:{legend:{display:false}}, scales:{y:{ beginAtZero:true }} }
       });
 
+      // 出典表示
+      const box=$("sourcesBox");
+      if (SOURCES && srcLinks.size){
+        const html=[...srcLinks].map(id=>{
+          const s=SOURCES.find(x=>x.id===id);
+          return s ? `・<a href="${s.url}" target="_blank" rel="noopener">${s.title}（${s.publisher}）</a>` : "";
+        }).filter(Boolean).join("<br>");
+        box.innerHTML = `<div>基準出典：</div>${html}`;
+      } else {
+        box.textContent = "基準出典：ローカル基準（standards.json）";
+      }
+
+      // ツール群
+      $("copyCoordBtn").onclick = ()=>{
+        if (Number.isFinite(lat) && Number.isFinite(lon)) copyText(`${lat.toFixed(6)}, ${lon.toFixed(6)}`);
+        else alert("座標がありません");
+      };
+      $("downloadJsonBtn").onclick = ()=> downloadBlob(`soil_${p.field_id||pointId}.json`, JSON.stringify(p,null,2), "application/json");
+      $("downloadCsvBtn").onclick  = ()=> downloadBlob(`soil_${p.field_id||pointId}.csv`, jsonToCsv(p), "text/csv");
+
       // 全属性
-      const wrap = $("analysisWrap"); wrap.innerHTML = ""; wrap.appendChild(renderPropsTable(p));
+      const wrap=$("analysisWrap"); wrap.innerHTML=""; wrap.appendChild(renderPropsTable(p));
 
-      // 画像ギャラリー
-      const gallery = $("gallery"); gallery.innerHTML = "";
-      const imgs = await loadImagesForFeature(src, f);
-      let shown = 0;
-      const note = $("galleryNote");
-      note.textContent = "";
-
-      if (imgs.length === 0){
-        note.textContent = "画像が見つかりません。props.images / images.json / images/<ID>_*.jpg をご用意ください。";
-      }else{
-        imgs.forEach(u => {
-          const img = document.createElement("img");
-          img.loading = "lazy";
-          img.alt = p.field_id || "";
-          img.src = u;
-          img.onerror = () => { img.style.display = "none"; };
-          img.onclick = () => window.open(u, "_blank", "noopener");
-          img.onload  = () => { shown++; };
+      // 画像
+      const baseDir = dirOf(src);
+      const gallery = $("gallery"); gallery.innerHTML="";
+      const note=$("galleryNote"); note.textContent="";
+      let imgs=[];
+      if (Array.isArray(p.images) && p.images.length){
+        imgs = p.images.map(u => u.match(/^https?:\/\//) ? u : `${baseDir}/${u.replace(/^\.?\//,"")}`);
+      } else if (typeof p.images==="string" && p.images.trim()){
+        imgs = p.images.split(",").map(s=>s.trim()).filter(Boolean).map(u => u.match(/^https?:\/\//)?u:`${baseDir}/${u.replace(/^\.?\//,"")}`);
+      } else {
+        imgs = guessImages(baseDir, p.field_id||pointId);
+      }
+      let shown=0;
+      if (imgs.length===0){
+        note.textContent="画像が見つかりません。image/<ID>_*.jpg を配置してください。";
+      } else {
+        imgs.forEach(u=>{
+          const img=new Image(); img.loading="lazy"; img.alt=p.field_id||""; img.src=u;
+          img.onerror=()=>{ img.style.display="none"; };
+          img.onload=()=>{ shown++; };
+          img.onclick=()=>window.open(u,"_blank","noopener");
           gallery.appendChild(img);
         });
-        // 少し待っても一枚も表示されなければ注意書き
-        setTimeout(() => {
-          if (shown === 0) {
-            note.textContent = "画像のURLにはアクセスできませんでした。ファイル名や拡張子をご確認ください。";
-          }
-        }, 800);
+        setTimeout(()=>{ if (shown===0) note.textContent="画像のURLにアクセスできませんでした。ファイル名や拡張子をご確認ください。"; }, 800);
       }
-    }
-
-    function addEvalRow(tbody, label, value, stdText, ev){
-      const tr = document.createElement("tr");
-      const td1 = document.createElement("td"); td1.textContent = label;
-      const td2 = document.createElement("td"); td2.textContent = (value ?? "—");
-      const td3 = document.createElement("td"); td3.textContent = stdText;
-      const td4 = document.createElement("td");
-      const chip = document.createElement("span");
-      chip.className = "chip " + (ev.class||"");
-      chip.textContent = ev.label;
-      td4.appendChild(chip);
-      const td5 = document.createElement("td"); td5.textContent = ev.comment || "";
-      tr.append(td1,td2,td3,td4,td5);
-      tbody.appendChild(tr);
     }
   </script>
 </body>
 </html>
+``

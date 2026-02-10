@@ -1,0 +1,7 @@
+本Dashboardの初期基準は、公的機関・普及資料に基づく運用目安です。
+実作物・土壌型・栽培方式に応じてJA/普及センターの基準で上書きしてください。
+主要出典：
+- 農林水産省「主要作物の土壌診断基準（宮崎）」 https://www.maff.go.jp/j/seisan/kankyo/hozen_type/h_sehi_kizyun/miy03.html
+- JA全農「土壌診断なるほどガイド」 https://www.zennoh.or.jp/members/pdf/gijyutu_1_01b.pdf
+- 岡山県「第4章 土壌分析結果の評価と改良対策」 https://www.pref.okayama.jp/uploaded/life/423596_2722883_misc.pdf
+- 鳥取県「らくらく土壌診断の手引き」 https://www.maff.go.jp/j/seisan/kankyo/hozen_type/h_sehi_kizyun/tottori01.html
