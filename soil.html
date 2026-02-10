@@ -175,20 +175,28 @@
     const $ = id => document.getElementById(id);
     const num = x => { const n = Number(x); return Number.isFinite(n) ? n : NaN; };
     const fmt = (v, d=2) => Number.isFinite(v) ? v.toFixed(d) : "—";
-    async function copyText(text){ try{ await navigator.clipboard.writeText(text); alert("コピーしました"); } catch{ prompt("コピーできない場合は手動でコピーしてください:", text); } }
+    async function copyText(text){
+      try{ await navigator.clipboard.writeText(text); alert("コピーしました"); }
+      catch{ prompt("コピーできない場合は手動でコピーしてください:", text); }
+    }
     function renderPropsTable(props){
       const table = document.createElement("table"); table.className="meta";
       Object.entries(props||{}).forEach(([k,v])=>{
-        const tr=document.createElement("tr"); const th=document.createElement("th"); const td=document.createElement("td");
-        th.textContent=k; td.textContent=(v==null?"":String(v)); tr.append(th,td); table.append(tr);
-      }); return table;
+        const tr=document.createElement("tr");
+        const th=document.createElement("th"); const td=document.createElement("td");
+        th.textContent=k; td.textContent=(v==null?"":String(v));
+        tr.append(th,td); table.append(tr);
+      });
+      return table;
     }
     function jsonToCsv(obj){
-      const keys=Object.keys(obj); const vals=keys.map(k=>'"'+String(obj[k]??"").replace(/"/g,'""')+'"');
+      const keys=Object.keys(obj);
+      const vals=keys.map(k=>'"'+String(obj[k]??"").replace(/"/g,'""')+'"');
       return keys.join(",")+"\n"+vals.join(",")+"\n";
     }
     function downloadBlob(name, text, type="text/plain"){
-      const blob=new Blob([text], {type}); const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
+      const blob=new Blob([text], {type});
+      const a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download=name; a.click();
       setTimeout(()=>URL.revokeObjectURL(a.href),1000);
     }
 
@@ -214,7 +222,10 @@
      **********************/
     main();
     async function main(){
-      if(!pointId){ document.body.innerHTML = `<div class="warn">IDが指定されていません。例：<code>soil.html?id=F001&src=...</code></div>`; return; }
+      if(!pointId){
+        document.body.innerHTML = `<div class="warn">IDが指定されていません。例：<code>soil.html?id=F001&src=...</code></div>`;
+        return;
+      }
 
       // 基準ファイルをロード
       try{
@@ -281,13 +292,15 @@
       const td1=document.createElement("td"); td1.textContent=label;
       const td2=document.createElement("td"); td2.textContent=(v ?? "—");
       const td3=document.createElement("td"); td3.textContent=stdText || "—";
-      const td4=document.createElement("td"); const chip=document.createElement("span"); chip.className="chip "+(judge.class||""); chip.textContent=judge.label; td4.appendChild(chip);
+      const td4=document.createElement("td");
+      const chip=document.createElement("span"); chip.className="chip "+(judge.class||""); chip.textContent=judge.label; td4.appendChild(chip);
       const td5=document.createElement("td"); td5.textContent=judge.comment||"";
       tr.append(td1,td2,td3,td4,td5); tbody.appendChild(tr);
     }
     function judgeRange(value, std, type){
       if (!Number.isFinite(value)) return {label:"—", class:"", comment:"値なし"};
       if (!std) return {label:"—", class:"", comment:"基準なし"};
+
       if (type==="ph"){
         const ok = std.ok||[5.5,6.5], warn=std.warn||[5.0,7.5];
         if (value>=ok[0] && value<=ok[1]) return {label:"良", class:"ok", comment:"適正域内"};
@@ -332,7 +345,7 @@
      **********************/
     function dirOf(url){ return url.substring(0, url.lastIndexOf("/")); }
 
-    // <ID>.(png|jpg|jpeg|webp) と 連番 (_/-) の両方を探索
+    // <ID>.(png|jpg|jpeg|webp) と 連番 (_ / -) の両方を探索
     function guessImages(baseDir, fid){
       const exts = ["png", "jpg", "jpeg", "webp"];
       const urls = [];
@@ -341,14 +354,11 @@
       exts.forEach(e => urls.push(`${baseDir}/image/${fid}.${e}`));
 
       // 2) 連番（アンダースコア）: F001_1.jpg ～ _6.jpg
-      for (let i = 1; i <= 6; i++) {
-        exts.forEach(e => urls.push(`${baseDir}/image/${fid}_${i}.${e}`));
-      }
+      for (let i = 1; i <= 6; i++) exts.forEach(e => urls.push(`${baseDir}/image/${fid}_${i}.${e}`));
 
       // 3) 連番（ハイフン）: F001-1.jpg ～ -6.jpg
-      for (let i = 1; i <= 6; i++) {
-        exts.forEach(e => urls.push(`${baseDir}/image/${fid}-${i}.${e}`));
-      }
+      for (let i = 1; i <= 6; i++) exts.forEach(e => urls.push(`${baseDir}/image/${fid}-${i}.${e}`));
+
       return urls;
     }
 
@@ -423,11 +433,22 @@
       $("fixedDescInput").value = fixedDesc; $("evalInput").value=evalTxt; $("issueInput").value=issue; $("solutionInput").value=solution;
 
       let editing=false;
-      $("editToggle").onclick = ()=>{ editing=!editing; $("memoEdit").style.display=editing?"block":"none"; $("saveBtn").style.display=editing?"inline-block":"none"; $("editToggle").textContent=editing?"閲覧":"編集"; };
+      $("editToggle").onclick = ()=>{
+        editing=!editing;
+        $("memoEdit").style.display=editing?"block":"none";
+        $("saveBtn").style.display=editing?"inline-block":"none";
+        $("editToggle").textContent=editing?"閲覧":"編集";
+      };
       $("saveBtn").onclick = ()=>{
-        const newMemo={ fixedDesc:$("fixedDescInput").value, evalTxt:$("evalInput").value, issue:$("issueInput").value, solution:$("solutionInput").value };
+        const newMemo={
+          fixedDesc:$("fixedDescInput").value,
+          evalTxt:$("evalInput").value,
+          issue:$("issueInput").value,
+          solution:$("solutionInput").value
+        };
         localStorage.setItem(memoKey, JSON.stringify(newMemo));
-        render(f); alert("保存しました（この端末のブラウザに保存されます）");
+        render(f);
+        alert("保存しました（この端末のブラウザに保存されます）");
       };
 
       // 基準 & 判定
@@ -438,11 +459,11 @@
         if(!std||!std[k]) return "—";
         const s=std[k], id=s.source;
         if (id) srcLinks.add(id);
-        if (k==="ph") return `良:${s.ok?.[0]}〜${s.ok?.[1]} / 注意:${s.warn?.[0]}〜${s.warn?.[1]}`;
-        if (k==="ec") return `良:≤${s.ok_max} / 注意:≤${s.warn_max}`;
-        if (k==="cec")return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
-        if (k==="cn") return `良:${s.ok?.[0]}〜${s.ok?.[1]} / 注意:${s.warn?.[0]}〜${s.warn?.[1]}`;
-        if (k==="om") return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
+        if (k==="ph")   return `良:${s.ok?.[0]}〜${s.ok?.[1]} / 注意:${s.warn?.[0]}〜${s.warn?.[1]}`;
+        if (k==="ec")   return `良:≤${s.ok_max} / 注意:≤${s.warn_max}`;
+        if (k==="cec")  return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
+        if (k==="cn")   return `良:${s.ok?.[0]}〜${s.ok?.[1]} / 注意:${s.warn?.[0]}〜${s.warn?.[1]}`;
+        if (k==="om")   return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
         if (k==="biotex") return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
         return "—";
       }
@@ -459,10 +480,12 @@
       // ランク（簡易：EC判定ベース）
       const evEc = judgeRange(num(p.EC), std?.ec, "ec");
       const rank = evEc.label==="良" ? "A" : (evEc.label==="注意" ? "B" : "C");
-      const rankBadge = $("rankBadge"); rankBadge.textContent=`${rank}ランク（仮）`; rankBadge.style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
+      const rankBadge = $("rankBadge");
+      rankBadge.textContent=`${rank}ランク（仮）`;
+      rankBadge.style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
 
       // レーダー・棒
-      const scores = (()=>{ // 0..5に正規化
+      const scores = (()=>{ // 0..5に正規化（ダッシュボードの雰囲気用）
         const ec=num(p.EC), ph=num(p.pH), cec=num(p.CEC);
         const soil_health = Number.isFinite(cec) ? Math.max(0, Math.min(5, Math.round(cec/10))) : 2;
         const safety      = Number.isFinite(ph)  ? (ph>=6 && ph<=7.2 ? 5 : 3) : 3;
@@ -473,17 +496,27 @@
       if (radarChart) radarChart.destroy();
       radarChart = new Chart($("radarChart"), {
         type:"radar",
-        data:{ labels:["おいしさ","土壌の健全性","環境配慮","安全性"],
-          datasets:[{ data:[scores.taste, scores.soil_health, scores.environment, scores.safety],
-            fill:true, backgroundColor:"rgba(10,102,194,0.25)", borderColor:"rgba(10,102,194,1)", pointBackgroundColor:"rgba(10,102,194,1)"}]},
+        data:{
+          labels:["おいしさ","土壌の健全性","環境配慮","安全性"],
+          datasets:[{
+            data:[scores.taste, scores.soil_health, scores.environment, scores.safety],
+            fill:true, backgroundColor:"rgba(10,102,194,0.25)",
+            borderColor:"rgba(10,102,194,1)", pointBackgroundColor:"rgba(10,102,194,1)"
+          }]
+        },
         options:{ scales:{ r:{ min:0,max:5,ticks:{display:false,stepSize:1}}}, plugins:{legend:{display:false}} }
       });
       if (barChart) barChart.destroy();
       barChart = new Chart($("barChart"), {
         type:"bar",
-        data:{ labels:["EC","pH","CEC","C/N","BIOTREX"],
-          datasets:[{ label:"値", data:[num(p.EC)||0, num(p.pH)||0, num(p.CEC)||0, Number.isFinite(CN)?CN:0, Number.isFinite(bio)?bio:0],
-            backgroundColor:["#4fc3f7","#81c784","#ffb74d","#9575cd","#90a4ae"] }]},
+        data:{
+          labels:["EC","pH","CEC","C/N","BIOTREX"],
+          datasets:[{
+            label:"値",
+            data:[num(p.EC)||0, num(p.pH)||0, num(p.CEC)||0, Number.isFinite(CN)?CN:0, Number.isFinite(bio)?bio:0],
+            backgroundColor:["#4fc3f7","#81c784","#ffb74d","#9575cd","#90a4ae"]
+          }]
+        },
         options:{ plugins:{legend:{display:false}}, scales:{y:{ beginAtZero:true }} }
       });
 
@@ -518,7 +551,8 @@
       if (Array.isArray(p.images) && p.images.length){
         imgs = p.images.map(u => u.match(/^https?:\/\//) ? u : `${baseDir}/${u.replace(/^\.?\//,"")}`);
       } else if (typeof p.images==="string" && p.images.trim()){
-        imgs = p.images.split(",").map(s=>s.trim()).filter(Boolean).map(u => u.match(/^https?:\/\//)?u:`${baseDir}/${u.replace(/^\.?\//,"")}`);
+        imgs = p.images.split(",").map(s=>s.trim()).filter(Boolean)
+                .map(u => u.match(/^https?:\/\//)?u:`${baseDir}/${u.replace(/^\.?\//,"")}`);
       } else {
         imgs = guessImages(baseDir, p.field_id||pointId);
       }
