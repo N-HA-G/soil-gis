@@ -320,6 +320,7 @@ textarea { resize: vertical; }
 
 /* =========================================================
    パネル最小化（ヘッダー＋中身の折りたたみ）
+   ※HTML側に panel-header / panel-body が必要！
 ========================================================= */
 .panel-header {
   display: flex;
@@ -348,7 +349,7 @@ textarea { resize: vertical; }
 .panel-toggle:hover { background: #f0f0f0; }
 
 .panel.collapsed {
-  width: 260px;
+  width: 260px;   /* 好みで */
   max-height: none;
   overflow: hidden;
 }
@@ -359,9 +360,17 @@ textarea { resize: vertical; }
 
 /* Leafletコントロールをパネルより前に出す */
 .leaflet-top,
-.leaflet-bottom { z-index: 2000; }
-.leaflet-control { z-index: 2001; }
-.leaflet-control-layers { z-index: 2002; }
+.leaflet-bottom {
+  z-index: 2000;
+}
+
+.leaflet-control {
+  z-index: 2001;
+}
+
+.leaflet-control-layers {
+  z-index: 2002;
+}
 
 /* Leafletのコントロールを常に前面に */
 .leaflet-top, .leaflet-bottom { z-index: 3000; }

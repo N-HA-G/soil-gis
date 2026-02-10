@@ -178,7 +178,7 @@
       setTimeout(()=>URL.revokeObjectURL(a.href),500);
     }
 
-    /* URL params（★2行パッチの1つ目：srcを必ずdecode） */
+    /* URL params (★2行パッチの1つ目：srcを必ずdecode) */
     const params = new URLSearchParams(location.search);
     const pointId = params.get("id");
     const src = (() => {
@@ -250,23 +250,6 @@
       const lu = $("landuse").value;
       return STANDARDS?.standards?.[lu] || null;
     }
-    function stdTextOf(std, type){
-      if(!std) return "";
-      if(type==="ph"){
-        const ok = std.ok || [5.5,6.5];
-        const w  = std.warn || [5.0,7.5];
-        return `適正:${ok[0]}–${ok[1]} / 注意:${w[0]}–${w[1]}`;
-      }
-      if(type==="ec"){
-        const o = std.ok_max ?? 0.5, w = std.warn_max ?? 0.8;
-        return `適正: ≤${o} / 注意: ≤${w}`;
-      }
-      if(type==="cec"){
-        const o = std.ok_min ?? 10, w = std.warn_min ?? 8;
-        return `適正: ≥${o} / 注意: ≥${w}`;
-      }
-      return "";
-    }
     function addRow(tbody, label, v, stdText, judge){
       const tr=document.createElement("tr");
       tr.innerHTML=`
@@ -285,7 +268,7 @@
       if(type==="ph"){
         const ok = std.ok||[5.5,6.5], w=std.warn||[5.0,7.5];
         if(value>=ok[0] && value<=ok[1]) return {label:"良", class:"ok", comment:"適正"};
-        if(value>=w[0] && value<=w[1])   return {label:"注意", class:"warn", comment:"やや外れ"};
+        if(value>=w[0] && value<=w[1]) return {label:"注意", class:"warn", comment:"やや外れ"};
         return {label:"要改善", class:"bad", comment:"適正域外"};
       }
       if(type==="ec"){
@@ -318,18 +301,6 @@
       for(let i=1;i<=6;i++) exts.forEach(e=>out.push(`${baseDir}/image/${fid}_${i}.${e}`));
       for(let i=1;i<=6;i++) exts.forEach(e=>out.push(`${baseDir}/image/${fid}-${i}.${e}`));
       return out;
-    }
-
-    function renderSources(){
-      const box = $("sourcesBox");
-      if(!SOURCES || !Array.isArray(SOURCES) || SOURCES.length===0){
-        box.textContent = ""; return;
-      }
-      box.innerHTML = "参考：" + SOURCES.map(s => {
-        const t = (s.title || "").trim();
-        const u = (s.url || "").trim();
-        return u ? `<a href="${u}" target="_blank" rel="noopener">${t||u}</a>` : t;
-      }).join(" / ");
     }
 
     async function render(f){
@@ -365,9 +336,7 @@
 
       // メモ
       const memoKey = `soilMemo:${src}#${p.field_id || pointId}`;
-      const memo = (()=>{
-        try{ return JSON.parse(localStorage.getItem(memoKey)||"{}"); }catch{return{}}
-      })();
+      const memo = (()=>{ try{ return JSON.parse(localStorage.getItem(memoKey)||"{}"); }catch{return{}} })();
       $("fixedDescView").textContent = memo.fixedDesc || "（未入力）";
       $("evalView").textContent      = memo.evalTxt   || "（未入力）";
       $("issueView").textContent     = memo.issue     || "（未入力）";
@@ -399,27 +368,24 @@
       // 標準値
       const std = getStd();
       const tbody = $("evalTable").querySelector("tbody"); tbody.innerHTML="";
-      addRow(tbody,"EC",  p.EC,  stdTextOf(std?.ec,"ec"),   judgeRange(num(p.EC),  std?.ec,  "ec"));
-      addRow(tbody,"pH",  p.pH,  stdTextOf(std?.ph,"ph"),   judgeRange(num(p.pH),  std?.ph,  "ph"));
-      addRow(tbody,"CEC", p.CEC, stdTextOf(std?.cec,"cec"), judgeRange(num(p.CEC), std?.cec, "cec"));
+      addRow(tbody,"EC", p.EC,  "", judgeRange(num(p.EC),  std?.ec,  "ec"));
+      addRow(tbody,"pH", p.pH,  "", judgeRange(num(p.pH),  std?.ph,  "ph"));
+      addRow(tbody,"CEC",p.CEC, "", judgeRange(num(p.CEC), std?.cec, "cec"));
       addRow(tbody,"C/N比", Number.isFinite(CN)?fmt(CN,1):"","", {label:"—",class:"",comment:""});
 
-      // 簡易ランク（未定義はグレー）
-      const ecn = num(p.EC);
-      let rank = "—", color = "#9e9e9e";
-      if(Number.isFinite(ecn)) { rank = (ecn<=0.5?"A":(ecn<=0.8?"B":"C")); color = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935"); }
+      // 簡易ランク
+      const rank = Number.isFinite(num(p.EC)) ? (num(p.EC)<=0.5?"A":(num(p.EC)<=0.8?"B":"C")) : "—";
       $("rankBadge").textContent = `${rank}ランク`;
-      $("rankBadge").style.background = color;
+      $("rankBadge").style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
 
       // 便利ボタン
-      $("copyCoordBtn").onclick = ()=>copyText(`${lat}, ${lon}`); // 緯度, 経度
+      $("copyCoordBtn").onclick = ()=>copyText(`${lat}, ${lon}`);
       $("downloadJsonBtn").onclick = ()=>downloadBlob(`soil_${p.field_id||pointId}.json`, JSON.stringify(p,null,2));
       $("downloadCsvBtn").onclick  = ()=>downloadBlob(`soil_${p.field_id||pointId}.csv`, jsonToCsv(p));
 
-      // 全属性（★修正：append 先を wrap に）
-      const wrap=$("analysisWrap"); 
-      wrap.innerHTML="";
-      wrap.appendChild((() => {
+      // 全属性
+      const wrap=$("analysisWrap"); wrap.innerHTML="";
+appendChild((()=>{
         const table=document.createElement("table"); table.className="eval-table";
         const thead=document.createElement("thead"); thead.innerHTML="<tr><th>キー</th><th>値</th></tr>";
         const tbody=document.createElement("tbody");
@@ -431,11 +397,8 @@
         table.append(thead,tbody); return table;
       })());
 
-      // 出典表示
-      renderSources();
-
       // 画像
-      const baseDir = dirOf(src); // ← decode 済みdir
+      const baseDir = dirOf(src); // ← decode されたdir
       const gallery = $("gallery"); gallery.innerHTML="";
       const note = $("galleryNote"); note.textContent="";
 
@@ -458,7 +421,7 @@
         img.onclick=()=>window.open(u,"_blank","noopener");
         gallery.appendChild(img);
       });
-      setTimeout(()=>{ if (shown===0) note.textContent="画像が見つかりません。ファイル名やフォルダ（image/）を確認してください。"; }, 1200);
+      setTimeout(()=>{ if (shown===0) note.textContent="画像が見つかりません。ファイル名やフォルダ（image/）を確認してください。"; }, 800);
     }
   </script>
 </body>

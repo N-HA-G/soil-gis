@@ -1,23 +1,21 @@
-<script>
+
 // window.MaskedTileLayer として公開（ESM不要）
 (function () {
   const MaskedTileLayer = L.TileLayer.extend({
     initialize: function (url, options) {
       L.TileLayer.prototype.initialize.call(this, url, options || {});
       this._filter = 'none';
-      this._mask = null;   // FeatureCollection
-      this._mapRef = null; // Leaflet Map
+      this._mask = null; // FeatureCollection
+      this._mapRef = null;
     },
     setFilter: function (h, s, b) {
       this._filter = `hue-rotate(${h}deg) saturate(${s}) brightness(${b})`;
       this.redraw();
-      return this;
     },
     setMask: function (featureCollection, mapRef) {
-      this._mask = featureCollection || null;
-      this._mapRef = mapRef || null;
+      this._mask = featureCollection;
+      this._mapRef = mapRef;
       this.redraw();
-      return this;
     },
     createTile: function (coords, done) {
       const size = 256;
@@ -33,7 +31,7 @@
         if (!this._mask || !this._mapRef) {
           ctx.filter = this._filter;
           ctx.drawImage(img, 0, 0);
-          return done && done(null, tile);
+          return done(null, tile);
         }
 
         ctx.save();
@@ -64,14 +62,13 @@
         ctx.drawImage(img, 0, 0);
         ctx.restore();
 
-        done && done(null, tile);
+        done(null, tile);
       };
 
-      img.onerror = () => done && done(null, tile);
+      img.onerror = () => done(null, tile);
       return tile;
     }
   });
 
   window.MaskedTileLayer = MaskedTileLayer;
 })();
-</script>
