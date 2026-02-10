@@ -331,11 +331,29 @@
      * 画像（image/）を収集
      **********************/
     function dirOf(url){ return url.substring(0, url.lastIndexOf("/")); }
-    function guessImages(baseDir, fid){
-      const exts=["jpg","jpeg","png","webp"]; const urls=[];
-      for(let i=1;i<=6;i++) for(const e of exts) urls.push(`${baseDir}/image/${fid}_${i}.${e}`);
-      return urls;
-    }
+   // 置き換え前:
+// function guessImages(baseDir, fid){ ... }
+
+// 置き換え後（<ID>.(png|jpg|jpeg|webp) も探索）
+function guessImages(baseDir, fid){
+  const exts = ["png", "jpg", "jpeg", "webp"];
+  const urls = [];
+
+  // 1) 単体ファイル: F001.png / F001.jpg ...
+  exts.forEach(e => urls.push(`${baseDir}/image/${fid}.${e}`));
+
+  // 2) 連番（アンダースコア）: F001_1.jpg ～ _6.jpg
+  for (let i = 1; i <= 6; i++) {
+    exts.forEach(e => urls.push(`${baseDir}/image/${fid}_${i}.${e}`));
+  }
+
+  // 3) 連番（ハイフン）: F001-1.jpg ～ -6.jpg（予備）
+  for (let i = 1; i <= 6; i++) {
+    exts.forEach(e => urls.push(`${baseDir}/image/${fid}-${i}.${e}`));
+  }
+
+  return urls;
+}
 
     /**********************
      * 表示
