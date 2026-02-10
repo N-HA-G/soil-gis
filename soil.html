@@ -55,6 +55,9 @@
     .report .rep-table{ width:100%; border-collapse:collapse; }
     .report .rep-table th,.report .rep-table td{ border-bottom:1px solid #eee; padding:6px 8px; text-align:left; }
 
+    /* 参考情報テーブルの微調整（任意） */
+    #waterTable td:nth-child(1) { white-space: nowrap; }
+
     @media print{
       body{ background:#fff; }
       header,.topbar,.btn, .gallery, details{ display:none !important; }
@@ -148,7 +151,7 @@
     </div>
   </div>
 
-  <!-- 標準値との比較（既存の判定表） -->
+  <!-- 標準値との比較 -->
   <div class="card" style="margin-top:12px;">
     <h2>標準値との比較</h2>
     <table class="eval-table" id="evalTable">
@@ -160,7 +163,21 @@
     <div id="sourcesBox" class="muted" style="margin-top:8px;"></div>
   </div>
 
-  <!-- ★ 簡易レポート（場所名／写真／結果｜標準） -->
+  <!-- ★ 参考情報（水質系・パックテスト） -->
+  <div class="card" id="waterCard" style="margin-top:12px; display:none;">
+    <h2>参考情報（水質系・パックテスト）</h2>
+    <table class="eval-table" id="waterTable">
+      <thead>
+        <tr><th>項目</th><th>値</th><th>備考</th></tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <div class="muted" style="margin-top:6px;">
+      ※ 単位はいずれも <b>mg/L</b>、参考表示（パックテスト値）
+    </div>
+  </div>
+
+  <!-- 簡易レポート -->
   <div id="simpleReport" class="card report" style="margin-top:12px;">
     <h2>簡易レポート</h2>
     <div class="rep-head">
@@ -228,7 +245,7 @@
     let featureList=[]; let currentIndex=-1;
     let STANDARDS=null; let SOURCES=[];
 
-    // ==== 標準テキスト生成（標準列） ====
+    // ==== 標準テキスト生成 ====
     function stdTextOf(k, std){
       if(!std || !std[k]) return "—";
       const s=std[k];
@@ -240,9 +257,30 @@
       if (k==="biotex") return `良:≥${s.ok_min} / 注意:≥${s.warn_min}`;
       return "—";
     }
-
-    // レポート用もこの関数を使う
     const stdTextFor = (k, std) => stdTextOf(k, std);
+
+    // ==== 参考情報（水質系） ====
+    function renderWaterInfo(p){
+      const card  = $("waterCard");
+      const tbody = $("waterTable").querySelector("tbody");
+      tbody.innerHTML = "";
+      const items = [
+        { key: "COD (mg/L)",  label: "COD (mg/L)"  },
+        { key: "PO4-P (mg/L)",label: "PO4-P (mg/L)"},
+        { key: "NO3-N (mg/L)",label: "NO3-N (mg/L)"},
+        { key: "NH4-N (mg/L)",label: "NH4-N (mg/L)"}
+      ];
+      let shown=0;
+      items.forEach(it=>{
+        const v = p[it.key];
+        if (v === null || v === undefined || v === "") return;
+        const tr = document.createElement("tr");
+        tr.innerHTML = `<td>${it.label}</td><td>${v}</td><td>参考表示</td>`;
+        tbody.appendChild(tr);
+        shown++;
+      });
+      card.style.display = shown>0 ? "block" : "none";
+    }
 
     // ==== 起動 ====
     main();
@@ -258,7 +296,6 @@
           const j=await s.json();
           STANDARDS=j;
           SOURCES=j.sources||[];
-          // 既定用途（standards.json の meta.default_landuse を尊重）
           $("landuse").value = j?.meta?.default_landuse || "paddy";
         }
       }catch{}
@@ -328,7 +365,7 @@
         if(value<=w) return {label:"注意",class:"warn",comment:"やや高い"};
         return {label:"要改善",class:"bad",comment:"高い"};
       }
-      if(type==="cec"){
+      if(type==="cec")){
         const o=std.ok_min??10, w=std.warn_min??8;
         if(value>=o) return {label:"良",class:"ok",comment:"十分"};
         if(value>=w) return {label:"注意",class:"warn",comment:"やや低い"};
@@ -408,7 +445,7 @@
         render(f);
       };
 
-      // ===== 標準（既存表） =====
+      // ===== 標準（表） =====
       const std = getStd();
       const tbody = $("evalTable").querySelector("tbody"); tbody.innerHTML="";
       const usedSourceIds = new Set();
@@ -428,13 +465,6 @@
       addRow(tbody,"有機物量",         p["有機物量"], stdTextAndUse("om"), {label:"—",class:"",comment:"参考"});
       const biotex = num(p["土壌微生物多様性・活性値(BIOTREX)"]);
       addRow(tbody,"微生物多様性(BIOTREX)", Number.isFinite(biotex)?biotex:"—", stdTextAndUse("biotex"), judgeRange(biotex, std?.biotex, "biotex"));
-
-      // ランク（簡易：ECベース）
-      //const evEc = judgeRange(num(p.EC), std?.ec, "ec");
-      //const rank = evEc.label==="良" ? "A" : (evEc.label==="注意" ? "B" : "C");
-      //const rankBadge = $("rankBadge");
-      //rankBadge.textContent = `${rank}ランク（仮）`;
-      //rankBadge.style.background = (rank==="A"?"#4caf50":rank==="B"?"#ffb300":"#e53935");
 
       // 出典表示（使用された source のみ）
       const box=$("sourcesBox");
@@ -466,20 +496,6 @@
         });
         table.append(thead,tb); return table;
       })());
-
-<!-- 参考情報（水質系・パックテスト） -->
-<div class="card" id="waterCard" style="margin-top:12px; display:none;">
-  <h2>参考情報（水質系・パックテスト）</h2>
-  <table class="eval-table" id="waterTable">
-    <thead>
-      <tr><th>項目</th><th>値</th><th>備考</th></tr>
-    </thead>
-    <tbody></tbody>
-  </table>
-  <div class="muted" style="margin-top:6px;">
-    ※ 単位はいずれも <b>mg/L</b>、参考表示（パックテスト値）
-  </div>
-</div>
 
       // 画像（ギャラリー）
       const baseDir = dirOf(src);
@@ -549,13 +565,31 @@
         addRepRow(repTb, "有機物量",  p["有機物量"], "om");
         addRepRow(repTb, "微生物多様性(BIOTREX)", p["土壌微生物多様性・活性値(BIOTREX)"], "biotex");
 
-        // 4) 出典（表で使われたキーの source を集約）
+        // 参考情報（水質系）を末尾に追加（あるものだけ）
+        const refItems = [
+          { key: "COD (mg/L)",  label: "COD (mg/L)"  },
+          { key: "PO4-P (mg/L)",label: "PO4-P (mg/L)"},
+          { key: "NO3-N (mg/L)",label: "NO3-N (mg/L)"},
+          { key: "NH4-N (mg/L)",label: "NH4-N (mg/L)"}
+        ];
+        refItems.forEach(it=>{
+          const v = p[it.key];
+          if (v === null || v === undefined || v === "") return;
+          const tr = document.createElement("tr");
+          tr.innerHTML = `<td>${it.label}</td><td>${v}</td><td>（参考）</td>`;
+          repTb.appendChild(tr);
+        });
+
+        // 出典（表で使ったキーの source を集約）
         const used = new Set();
         ["ph","ec","cec","cn","om","biotex"].forEach(k=>{ const id=repStd?.[k]?.source; if(id) used.add(id); });
         $("repSource").innerHTML = (SOURCES && used.size)
           ? [...used].map(id=>{ const s=SOURCES.find(x=>x.id===id); return s ? `・<a href="${s.url}" target="_blank" rel="noopener">${s.title}（${s.publisher}）</a>`:""; }).filter(Boolean).join("<br>")
           : "";
       }catch(e){ console.warn("簡易レポート生成で警告:", e); }
+
+      // ★ 参考情報カードを更新
+      renderWaterInfo(p);
 
     } // render
   </script>

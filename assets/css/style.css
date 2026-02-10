@@ -381,6 +381,3 @@ textarea { resize: vertical; }
   pointer-events: none;
 }
 
-
-/* 参考情報テーブルの微調整（任意） */
-#waterTable td:nth-child(1) { white-space: nowrap; }
